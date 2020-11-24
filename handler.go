@@ -1,7 +1,8 @@
-package coap
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-import (
-)
+package coap
 
 func handleMessage(req *Message) *Message {
 	var rsp *Message
@@ -42,9 +43,8 @@ func handleMessage(req *Message) *Message {
 		}
 	}
 
-	if dedup!=nil {
+	if dedup != nil {
 		dedup.save(rsp)
 	}
 	return rsp
 }
-
