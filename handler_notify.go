@@ -10,7 +10,7 @@ func handleNotify(req *Message) *Message {
 	c := getObserve(req)
 
 	if c == nil {
-		logDebug(nil, "coap: observation not found")
+		logWarn(nil, nil, "coap: observation not found")
 		rsp = &Message{
 			Type:      TypeReset,
 			Code:      req.Code,

@@ -66,17 +66,3 @@ func logWarn(msg *Message, err error, f string, args ...interface{}) {
 	}
 	logFunc(time.Now(), LogLevelWarn, msg, err, fmt.Sprintf(f, args...))
 }
-
-func logInfo(msg *Message, f string, args ...interface{}) {
-	if logLevel < 3 {
-		return
-	}
-	logFunc(time.Now(), LogLevelInfo, msg, nil, fmt.Sprintf(f, args...))
-}
-
-func logDebug(msg *Message, f string, args ...interface{}) {
-	if logLevel < 4 {
-		return
-	}
-	logFunc(time.Now(), LogLevelDebug, msg, nil, fmt.Sprintf(f, args...))
-}

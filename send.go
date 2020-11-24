@@ -24,16 +24,12 @@ func Send(addr string, msg *Message, options *SendOptions) (*Message, error) {
 
 	peer := dtlsFindPeer(addr)
 	if peer != nil {
-
-		err := udpSend(addr, data)
-		if err != nil {
-			return nil, err
-		}
-	} else {
 		err = peer.Write(data)
-		if err != nil {
-			return nil, err
-		}
+	} else {
+		err = udpSend(addr, data)
+	}
+	if err != nil {
+		return nil, err
 	}
 
 	if msg.Type != TypeAcknowledgement && pendingChan != nil {
@@ -51,20 +47,15 @@ func Send(addr string, msg *Message, options *SendOptions) (*Message, error) {
 					return rsp, nil
 				case <-time.After(options.retryTimeout):
 					//retransmit
-					peer, err := dtlsListener.FindPeer(addr)
-					if err != nil {
-						//assume non-DTLS peer...
-						err := udpSend(addr, data)
-						if err != nil {
-							return nil, err
-						}
-					} else {
+					peer := dtlsFindPeer(addr)
+					if peer != nil {
 						err = peer.Write(data)
-						if err != nil {
-							return nil, err
-						}
+					} else {
+						err = udpSend(addr, data)
 					}
-
+					if err != nil {
+						return nil, err
+					}
 				}
 			}
 			return nil, ErrTimeout

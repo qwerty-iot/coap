@@ -5,8 +5,9 @@
 package coap
 
 import (
-	"github.com/qwerty-iot/dtls/v2"
 	"time"
+
+	"github.com/qwerty-iot/dtls/v2"
 )
 
 var dtlsListener *dtls.Listener
@@ -27,7 +28,7 @@ func dtlsReader(name string, listener *dtls.Listener) {
 
 	var req Message
 	if err := req.unmarshalBinary(rawReq); err != nil {
-		logError(nil, err, "error parsing COAP header")
+		logError(nil, err, "coap: error parsing COAP header")
 		return
 	}
 	req.Meta.RemoteAddr = peer.RemoteAddr()
@@ -40,7 +41,7 @@ func dtlsReader(name string, listener *dtls.Listener) {
 	if rsp != nil {
 		rawRsp, err := rsp.marshalBinary()
 		if err != nil {
-			logError(nil, err, "error marshaling COAP response")
+			logError(nil, err, "coap: error marshaling COAP response")
 			return
 		}
 

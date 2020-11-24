@@ -19,7 +19,6 @@ type routeEntry struct {
 }
 
 func AddRoute(path string, callback RouteCallback) {
-	logInfo(nil, "Add route for: %s", path)
 	pathParts := strings.Split(path, "/")
 	var route *routeEntry
 	var found bool
