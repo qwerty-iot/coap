@@ -156,7 +156,19 @@ func (m *Message) WithPayload(payload []byte) *Message {
 	return m
 }
 
+func (m *Message) Accept() MediaType {
+	opt := m.Option(OptAccept)
+	if opt != nil {
+		return opt.(MediaType)
+	} else {
+		return None
+	}
+}
+
 func (m *Message) WithAccept(mt MediaType) *Message {
+	if mt == None {
+		return m
+	}
 	m.WithOption(OptAccept, mt, true)
 	return m
 }
@@ -166,11 +178,14 @@ func (m *Message) ContentFormat() MediaType {
 	if opt != nil {
 		return opt.(MediaType)
 	} else {
-		return TextPlain
+		return None
 	}
 }
 
 func (m *Message) WithContentFormat(mt MediaType) *Message {
+	if mt == None {
+		return m
+	}
 	m.WithOption(OptContentFormat, mt, true)
 	return m
 }

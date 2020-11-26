@@ -52,16 +52,18 @@ func udpReader(name string, listener *net.UDPConn) {
 
 	rsp := handleMessage(&req)
 
-	rawRsp, err := rsp.marshalBinary()
-	if err != nil {
-		logError(nil, err, "coap: error marshaling COAP response")
-		return
-	}
-
-	if rawRsp != nil {
-		_, err = listener.WriteToUDP(rawRsp, from)
+	if rsp != nil {
+		rawRsp, err := rsp.marshalBinary()
 		if err != nil {
-			logWarn(nil, err, "coap: error writing coap response")
+			logError(nil, err, "coap: error marshaling COAP response")
+			return
+		}
+
+		if rawRsp != nil {
+			_, err = listener.WriteToUDP(rawRsp, from)
+			if err != nil {
+				logWarn(nil, err, "coap: error writing coap response")
+			}
 		}
 	}
 
