@@ -127,6 +127,7 @@ const (
 	AppOctets     MediaType = 42    // application/octet-stream
 	AppExi        MediaType = 47    // application/exi
 	AppJSON       MediaType = 50    // application/json
+	AppCBOR       MediaType = 60    // application/cbor
 	AppLwm2mTLV   MediaType = 11542 //application/vnd.oma.lwm2m+tlv
 	AppLwm2mJSON  MediaType = 11543 //application/vnd.oma.lwm2m+json
 )
