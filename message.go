@@ -5,6 +5,7 @@
 package coap
 
 import (
+	"fmt"
 	"io"
 	"reflect"
 	"strings"
@@ -124,6 +125,17 @@ func (m Message) ParseQuery() map[string]string {
 		}
 	}
 	return m.queryVars
+}
+
+func (m *Message) WithQuery(q map[string]string) *Message {
+	for k, v := range q {
+		val := k
+		if len(v) != 0 {
+			val = fmt.Sprintf("%s=%s", k, v)
+		}
+		m.WithOption(OptURIQuery, val, false)
+	}
+	return m
 }
 
 // Path gets the Path set on this message if any.
