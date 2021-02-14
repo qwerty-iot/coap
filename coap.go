@@ -14,18 +14,23 @@ type Config struct {
 	DeduplicateExpiration   time.Duration
 	DeduplicateInterval     time.Duration
 	ObserveNotFoundCallback ObserveNotFoundCallback
+	BlockDefaultSize        int
+	BlockInactivityTimeout  time.Duration
 }
 
 var config = &Config{
-	ExchangeLifetime:      10,
-	DeduplicateExpiration: time.Second * 600,
-	DeduplicateInterval:   time.Second * 20,
+	ExchangeLifetime:       10,
+	DeduplicateExpiration:  time.Second * 600,
+	DeduplicateInterval:    time.Second * 20,
+	BlockDefaultSize:       1024,
+	BlockInactivityTimeout: time.Second * 120,
 }
 
 func Configure(conf *Config) {
 	config = conf
 
 	go dedupWatcher()
+	go expireBlocks()
 }
 
 func randomString(length int) string {

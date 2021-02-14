@@ -22,8 +22,8 @@ func pendingSave(msg *Message) chan *Message {
 	}
 	pendingMux.Lock()
 	msg.MessageID = pendingMsgId
-	pendingMap[string(msg.Token)] = pe
 	pendingMsgId = pendingMsgId + 1
+	pendingMap[string(msg.Token)] = pe
 	pendingMux.Unlock()
 	return pe.c
 }

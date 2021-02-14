@@ -57,6 +57,7 @@ const (
 	RspCodeValid                 COAPCode = 67
 	RspCodeChanged               COAPCode = 68
 	RspCodeContent               COAPCode = 69
+	RspCodeContinue              COAPCode = 95
 	RspCodeBadRequest            COAPCode = 128
 	RspCodeUnauthorized          COAPCode = 129
 	RspCodeBadOption             COAPCode = 130
@@ -85,6 +86,7 @@ var codeNames = [256]string{
 	RspCodeValid:                 "Valid",
 	RspCodeChanged:               "Changed",
 	RspCodeContent:               "Content",
+	RspCodeContinue:              "Continue",
 	RspCodeBadRequest:            "BadRequest",
 	RspCodeUnauthorized:          "Unauthorized",
 	RspCodeBadOption:             "BadOption",

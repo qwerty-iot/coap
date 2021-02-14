@@ -95,6 +95,7 @@ var optionDefs = [256]optionDef{
 	OptProxyScheme:   {valueFormat: valueString, minLen: 1, maxLen: 255},
 	OptSize1:         {valueFormat: valueUint, minLen: 0, maxLen: 4},
 	OptBlock2:        {valueFormat: valueOpaque, minLen: 0, maxLen: 3},
+	OptBlock1:        {valueFormat: valueOpaque, minLen: 0, maxLen: 3},
 }
 
 type option struct {

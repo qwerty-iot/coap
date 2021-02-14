@@ -6,10 +6,11 @@ package coap
 
 import (
 	"fmt"
-	"io"
 	"reflect"
 	"strings"
 	"time"
+
+	"github.com/qwerty-iot/tox"
 )
 
 type Metadata struct {
@@ -26,9 +27,7 @@ type Message struct {
 	MessageID uint16
 	Token     []byte
 
-	Payload       []byte
-	PayloadReader io.Reader
-	PayloadSize   int
+	Payload []byte
 
 	packetSize int
 
@@ -42,6 +41,34 @@ type Message struct {
 
 func NewMessage() *Message {
 	return &Message{}
+}
+
+func (m Message) getBlock1() *BlockMetadata {
+	if oi := m.Option(OptBlock1); oi != nil {
+		bm, _ := blockDecode(oi)
+		return bm
+	}
+	return nil
+}
+
+func (m Message) getBlock2() *BlockMetadata {
+	if oi := m.Option(OptBlock2); oi != nil {
+		bm, _ := blockDecode(oi)
+		return bm
+	}
+	return nil
+}
+
+func (m Message) getBlockKey() string {
+	return m.Code.String() + m.PathString() + m.QueryString()
+}
+
+func (m Message) RequiresBlockwise() bool {
+	if m.Payload != nil && len(m.Payload) > config.BlockDefaultSize {
+		return true
+	} else {
+		return false
+	}
 }
 
 // IsConfirmable returns true if this message is confirmable.
@@ -127,6 +154,12 @@ func (m Message) ParseQuery() map[string]string {
 	return m.queryVars
 }
 
+func (m Message) QueryString() string {
+	qi := m.Options(OptURIQuery)
+	qa := tox.ToStringArray(qi)
+	return strings.Join(qa, "&")
+}
+
 func (m *Message) WithQuery(q map[string]string) *Message {
 	for k, v := range q {
 		val := k
@@ -165,6 +198,16 @@ func (m *Message) WithPath(s []string) *Message {
 
 func (m *Message) WithPayload(payload []byte) *Message {
 	m.Payload = payload
+	return m
+}
+
+func (m *Message) WithBlock1(bm *BlockMetadata) *Message {
+	m.WithOption(OptBlock1, bm.Encode(), true)
+	return m
+}
+
+func (m *Message) WithBlock2(bm *BlockMetadata) *Message {
+	m.WithOption(OptBlock2, bm.Encode(), true)
 	return m
 }
 

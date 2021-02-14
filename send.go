@@ -5,10 +5,81 @@
 package coap
 
 import (
+	"errors"
 	"time"
 )
 
 func Send(addr string, msg *Message, options *SendOptions) (*Message, error) {
+	var rsp *Message
+	var err error
+
+	if msg.RequiresBlockwise() {
+		// chunk and send
+		data := msg.Payload
+		blockSize := config.BlockDefaultSize
+		blockNum := 0
+		for {
+			offset := blockNum * blockSize
+			dataLen := blockSize
+			more := true
+			if offset+blockSize > len(data) {
+				dataLen = len(data) - blockNum*blockSize
+				more = false
+			}
+			msg.Payload = data[offset : offset+dataLen]
+			msg.WithBlock1(blockInit(blockNum, more, blockSize))
+			rsp, err = send(addr, msg, options)
+			if err != nil {
+				return nil, err
+			}
+			if rsp.Code != RspCodeContinue {
+				return nil, errors.New("expected block transfer continue response")
+			}
+			block1 := rsp.getBlock1()
+			if block1 == nil {
+				return nil, errors.New("expected block1 in response")
+			}
+			blockNum = block1.Num
+			blockSize = block1.Size
+			if !more {
+				break
+			}
+			blockNum++
+		}
+	} else {
+		rsp, err = send(addr, msg, options)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	block2 := rsp.getBlock2()
+	if block2 != nil {
+		//blockwise requests
+		var data []byte
+		data = append(data, rsp.Payload...)
+
+		block := 1
+		for {
+			bm := blockInit(block, false, block2.Size)
+			msg.WithBlock2(bm)
+			rsp, err = send(addr, msg, options)
+			if err != nil {
+				return nil, err
+			}
+			data = append(data, rsp.Payload...)
+			block++
+			block2 = rsp.getBlock2()
+			if !block2.More {
+				break
+			}
+		}
+		rsp.Payload = data
+	}
+	return rsp, err
+}
+
+func send(addr string, msg *Message, options *SendOptions) (*Message, error) {
 	if options == nil {
 		options = NewOptions()
 	}
@@ -47,7 +118,7 @@ func Send(addr string, msg *Message, options *SendOptions) (*Message, error) {
 					return rsp, nil
 				case <-time.After(options.retryTimeout):
 					//retransmit
-					peer := dtlsFindPeer(addr)
+					peer = dtlsFindPeer(addr)
 					if peer != nil {
 						err = peer.Write(data)
 					} else {
