@@ -44,6 +44,8 @@ type COAPCode uint8
 
 // Request Codes
 const (
+	CodeEmpty COAPCode = 0
+
 	CodeGet    COAPCode = 1
 	CodePost   COAPCode = 2
 	CodePut    COAPCode = 3

@@ -7,6 +7,14 @@ package coap
 func handleNotify(req *Message) *Message {
 	var rsp *Message
 
+	if handleAcknowledgement(req) {
+		if req.IsConfirmable() {
+			return req.MakeReply(CodeEmpty, nil)
+		} else {
+			return nil
+		}
+	}
+
 	c := getObserve(req)
 
 	if c == nil {

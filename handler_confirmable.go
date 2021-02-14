@@ -7,7 +7,7 @@ package coap
 func handleConfirmable(req *Message) *Message {
 	var rsp *Message
 
-	if req.Code == 0 {
+	if req.Code == CodeEmpty {
 		rsp = &Message{
 			Type:      TypeReset,
 			Code:      0,
@@ -17,15 +17,19 @@ func handleConfirmable(req *Message) *Message {
 		return rsp
 	}
 
-	callback := matchRoutes(req)
-	if callback != nil {
-		rsp = callback(req)
+	if req.Code > 10 {
+		// delayed ack
+		if handleAcknowledgement(req) {
+			rsp = req.MakeReply(CodeEmpty, nil)
+		} else {
+			rsp = req.MakeReply(RspCodeNotFound, nil)
+		}
 	} else {
-		rsp = &Message{
-			Type:      TypeAcknowledgement,
-			Code:      RspCodeNotFound,
-			MessageID: req.MessageID,
-			Token:     req.Token,
+		callback := matchRoutes(req)
+		if callback != nil {
+			rsp = callback(req)
+		} else {
+			rsp = req.MakeReply(RspCodeNotFound, nil)
 		}
 	}
 
