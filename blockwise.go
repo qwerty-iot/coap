@@ -7,10 +7,6 @@ import (
 	"time"
 )
 
-func init() {
-	go expireBlocks()
-}
-
 type BlockMetadata struct {
 	Size int
 	More bool

@@ -10,7 +10,6 @@ import (
 )
 
 type Config struct {
-	ExchangeLifetime        int
 	DeduplicateExpiration   time.Duration
 	DeduplicateInterval     time.Duration
 	ObserveNotFoundCallback ObserveNotFoundCallback
@@ -19,7 +18,6 @@ type Config struct {
 }
 
 var config = &Config{
-	ExchangeLifetime:       10,
 	DeduplicateExpiration:  time.Second * 600,
 	DeduplicateInterval:    time.Second * 20,
 	BlockDefaultSize:       1024,
@@ -27,7 +25,23 @@ var config = &Config{
 }
 
 func Configure(conf *Config) {
-	config = conf
+	if conf != nil {
+		if conf.DeduplicateExpiration > 0 {
+			config.DeduplicateExpiration = conf.DeduplicateExpiration
+		}
+		if conf.DeduplicateInterval > 0 {
+			config.DeduplicateInterval = conf.DeduplicateInterval
+		}
+		if conf.ObserveNotFoundCallback != nil {
+			config.ObserveNotFoundCallback = conf.ObserveNotFoundCallback
+		}
+		if conf.BlockDefaultSize > 0 {
+			config.BlockDefaultSize = conf.BlockDefaultSize
+		}
+		if conf.BlockInactivityTimeout > 0 {
+			config.BlockInactivityTimeout = conf.BlockInactivityTimeout
+		}
+	}
 
 	go dedupWatcher()
 	go expireBlocks()
