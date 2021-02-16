@@ -24,7 +24,7 @@ func handleMessage(req *Message) *Message {
 			// init waiter
 			rsp = req.MakeReply(RspCodeContinue, nil)
 			rsp.WithBlock1(block1)
-			blockCachePut(req)
+			blockCachePut(req, "")
 			return rsp
 		} else if !block1.More {
 			// reassemble data
@@ -86,10 +86,10 @@ func handleMessage(req *Message) *Message {
 				block2 = blockInit(0, true, config.BlockDefaultSize)
 
 				//store request in block cache
-				blockCachePut(rsp)
+				blockCachePut(rsp, req.getBlockKey())
 				//rewrite rsp to include block0
 				var err error
-				rsp, err = blockCacheGet(rsp, 0, config.BlockDefaultSize)
+				rsp, err = blockCacheGet(req, 0, config.BlockDefaultSize)
 				if err != nil {
 					logError(req, err, "coap: error getting first block2")
 					rsp = req.MakeReply(RspCodeInternalServerError, nil)

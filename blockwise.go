@@ -131,8 +131,11 @@ type blockCacheEntry struct {
 
 var blockCache sync.Map
 
-func blockCachePut(req *Message) {
-	blockCache.Store(req.getBlockKey(), &blockCacheEntry{rsp: req, expires: time.Now().Add(config.BlockInactivityTimeout)})
+func blockCachePut(req *Message, key string) {
+	if len(key) == 0 {
+		key = req.getBlockKey()
+	}
+	blockCache.Store(key, &blockCacheEntry{rsp: req, expires: time.Now().Add(config.BlockInactivityTimeout)})
 }
 
 func blockCacheAppend(req *Message) error {
