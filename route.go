@@ -46,17 +46,19 @@ func AddRoute(path string, callback RouteCallback) {
 				route = &routeEntry{children: map[string]*routeEntry{}, key: key}
 			}
 			routeMap[part] = route
+			routeMap = route.children
 		}
 	}
 }
 
 func matchRoutes(msg *Message) RouteCallback {
-
 	pathParts := strings.Split(msg.PathString(), "/")
 
 	var route *routeEntry
 	var found bool
+
 	routeMap := routes
+
 	var deepestCallback RouteCallback
 	for _, part := range pathParts {
 		if route, found = routeMap[part]; found {
