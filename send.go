@@ -32,7 +32,7 @@ func Send(addr string, msg *Message, options *SendOptions) (*Message, error) {
 			if err != nil {
 				return nil, err
 			}
-			if rsp.Code != RspCodeContinue {
+			if more && rsp.Code != RspCodeContinue {
 				return nil, errors.New("expected block transfer continue response")
 			}
 			block1 := rsp.getBlock1()
