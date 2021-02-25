@@ -17,6 +17,9 @@ func Send(addr string, msg *Message, options *SendOptions) (*Message, error) {
 		// chunk and send
 		data := msg.Payload
 		blockSize := config.BlockDefaultSize
+		if msg.Meta.BlockSize != 0 {
+			blockSize = msg.Meta.BlockSize
+		}
 		blockNum := 0
 		for {
 			offset := blockNum * blockSize

@@ -83,13 +83,17 @@ func handleMessage(req *Message) *Message {
 		if rsp != nil {
 			if rsp.RequiresBlockwise() {
 				//need to send BLOCK2
-				block2 = blockInit(0, true, config.BlockDefaultSize)
+				bs := config.BlockDefaultSize
+				if rsp.Meta.BlockSize != 0 {
+					bs = rsp.Meta.BlockSize
+				}
+				block2 = blockInit(0, true, bs)
 
 				//store request in block cache
 				blockCachePut(rsp, req.getBlockKey())
 				//rewrite rsp to include block0
 				var err error
-				rsp, err = blockCacheGet(req, 0, config.BlockDefaultSize)
+				rsp, err = blockCacheGet(req, 0, bs)
 				if err != nil {
 					logError(req, err, "coap: error getting first block2")
 					rsp = req.MakeReply(RspCodeInternalServerError, nil)

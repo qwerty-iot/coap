@@ -18,6 +18,7 @@ type Metadata struct {
 	RemoteAddr   string
 	DtlsIdentity string
 	ReceivedAt   time.Time
+	BlockSize    int
 }
 
 // Message is a CoAP message.
@@ -64,10 +65,18 @@ func (m Message) getBlockKey() string {
 }
 
 func (m Message) RequiresBlockwise() bool {
-	if m.Payload != nil && len(m.Payload) > config.BlockDefaultSize {
-		return true
+	if m.Meta.BlockSize != 0 {
+		if m.Payload != nil && len(m.Payload) > m.Meta.BlockSize {
+			return true
+		} else {
+			return false
+		}
 	} else {
-		return false
+		if m.Payload != nil && len(m.Payload) > config.BlockDefaultSize {
+			return true
+		} else {
+			return false
+		}
 	}
 }
 
