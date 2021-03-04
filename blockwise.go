@@ -169,6 +169,9 @@ func blockCacheGet(req *Message, num int, sz int) (*Message, error) {
 		}
 
 		newRsp.Payload = bce.rsp.Payload[offset : offset+blockSize]
+		if num == 0 {
+			newRsp.WithSize2(len(bce.rsp.Payload))
+		}
 
 		bm := blockInit(num, more, sz)
 		newRsp.WithBlock2(bm)

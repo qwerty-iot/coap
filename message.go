@@ -220,6 +220,16 @@ func (m *Message) WithBlock2(bm *BlockMetadata) *Message {
 	return m
 }
 
+func (m *Message) WithSize1(sz int) *Message {
+	m.WithOption(OptSize1, sz, true)
+	return m
+}
+
+func (m *Message) WithSize2(sz int) *Message {
+	m.WithOption(OptSize2, sz, true)
+	return m
+}
+
 func (m *Message) Accept() MediaType {
 	opt := m.Option(OptAccept)
 	if opt != nil {

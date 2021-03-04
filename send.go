@@ -31,6 +31,9 @@ func Send(addr string, msg *Message, options *SendOptions) (*Message, error) {
 			}
 			msg.Payload = data[offset : offset+dataLen]
 			msg.WithBlock1(blockInit(blockNum, more, blockSize))
+			if blockNum == 0 {
+				msg.WithSize1(len(data))
+			}
 			rsp, err = send(addr, msg, options)
 			if err != nil {
 				return nil, err

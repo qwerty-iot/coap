@@ -32,6 +32,7 @@ type OptionID uint8
    |  20 |    |   |   | x | Location-Query | string | 0-255  | (none)  |
    |  23 | x  | x |   |   | Block2         | uint   | 0-3    | (none)  |
    |  27 | x  | x |   |   | Block1         | uint   | 0-3    | (none)  |
+   |  28 | x  | x |   |   | Size2          | uint   | 0-3    | (none)  |
    |  35 | x  | x | - |   | Proxy-Uri      | string | 1-1034 | (none)  |
    |  39 | x  | x | - |   | Proxy-Scheme   | string | 1-255  | (none)  |
    |  60 |    |   | x |   | Size1          | uint   | 0-4    | (none)  |
@@ -55,6 +56,7 @@ const (
 	OptLocationQuery OptionID = 20
 	OptBlock2        OptionID = 23
 	OptBlock1        OptionID = 27
+	OptSize2         OptionID = 28
 	OptProxyURI      OptionID = 35
 	OptProxyScheme   OptionID = 39
 	OptSize1         OptionID = 60
@@ -94,6 +96,7 @@ var optionDefs = [256]optionDef{
 	OptProxyURI:      {valueFormat: valueString, minLen: 1, maxLen: 1034},
 	OptProxyScheme:   {valueFormat: valueString, minLen: 1, maxLen: 255},
 	OptSize1:         {valueFormat: valueUint, minLen: 0, maxLen: 4},
+	OptSize2:         {valueFormat: valueUint, minLen: 0, maxLen: 4},
 	OptBlock2:        {valueFormat: valueOpaque, minLen: 0, maxLen: 3},
 	OptBlock1:        {valueFormat: valueOpaque, minLen: 0, maxLen: 3},
 }
