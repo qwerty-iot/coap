@@ -132,6 +132,7 @@ const (
 	AppExi        MediaType = 47    // application/exi
 	AppJSON       MediaType = 50    // application/json
 	AppCBOR       MediaType = 60    // application/cbor
+	AppSenmlCBOR  MediaType = 112   // application/senml_cbor
 	AppLwm2mTLV   MediaType = 11542 //application/vnd.oma.lwm2m+tlv
 	AppLwm2mJSON  MediaType = 11543 //application/vnd.oma.lwm2m+json
 )
