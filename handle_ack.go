@@ -4,7 +4,10 @@
 
 package coap
 
-import "sync"
+import (
+	"sync"
+	"time"
+)
 
 type pendingEntry struct {
 	c chan *Message
@@ -12,7 +15,7 @@ type pendingEntry struct {
 
 var pendingMap = map[string]*pendingEntry{}
 var pendingMux sync.Mutex
-var pendingMsgId uint16 = 1
+var pendingMsgId uint16 = uint16(time.Now().UnixNano() % 32767)
 
 func pendingSave(msg *Message) chan *Message {
 	pe := &pendingEntry{}
