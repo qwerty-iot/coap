@@ -33,6 +33,8 @@ func dtlsReader(name string, listener *dtls.Listener) {
 	}
 	req.Meta.RemoteAddr = peer.RemoteAddr()
 	req.Meta.DtlsIdentity = peer.SessionIdentityString()
+	req.Meta.DtlsPublicKey = peer.SessionPublicKey()
+	req.Meta.DtlsCertificate = peer.SessionCertificate()
 	req.Meta.ListenerName = name
 	req.Meta.ReceivedAt = time.Now().UTC()
 

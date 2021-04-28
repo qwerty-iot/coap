@@ -5,6 +5,7 @@
 package coap
 
 import (
+	"crypto/x509"
 	"fmt"
 	"reflect"
 	"strings"
@@ -14,11 +15,13 @@ import (
 )
 
 type Metadata struct {
-	ListenerName string
-	RemoteAddr   string
-	DtlsIdentity string
-	ReceivedAt   time.Time
-	BlockSize    int
+	ListenerName    string
+	RemoteAddr      string
+	DtlsIdentity    string
+	DtlsPublicKey   []byte
+	DtlsCertificate *x509.Certificate
+	ReceivedAt      time.Time
+	BlockSize       int
 }
 
 // Message is a CoAP message.
