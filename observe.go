@@ -18,16 +18,22 @@ type Observation struct {
 	arg      interface{}
 }
 
-func Observe(addr string, path string, encoding MediaType, callback ObserveCallback, arg interface{}, options *SendOptions) (string, error) {
+func Observe(addr string, code COAPCode, path string, payload []byte, encoding MediaType, callback ObserveCallback, arg interface{}, options *SendOptions) (string, error) {
 	if options == nil {
 		options = NewOptions()
 	}
 
-	req := &Message{Type: TypeConfirmable, Code: CodeGet}
+	req := &Message{Type: TypeConfirmable, Code: code}
 	req.WithOption(OptObserve, 0, true)
-	req.WithPathString(path)
+	if len(path) != 0 {
+		req.WithPathString(path)
+	}
 	if encoding != None {
 		req.WithOption(OptAccept, encoding, true)
+	}
+	if payload != nil {
+		req.WithOption(OptContentFormat, encoding, true)
+		req.Payload = payload
 	}
 
 	rsp, err := Send(addr, req, options)
