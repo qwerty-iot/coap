@@ -50,6 +50,8 @@ const (
 	CodePost   COAPCode = 2
 	CodePut    COAPCode = 3
 	CodeDelete COAPCode = 4
+	CodeFetch  COAPCode = 5
+	CodePatch  COAPCode = 6
 )
 
 // Response Codes
@@ -83,6 +85,8 @@ var codeNames = [256]string{
 	CodePost:                     "POST",
 	CodePut:                      "PUT",
 	CodeDelete:                   "DELETE",
+	CodeFetch:                    "FETCH",
+	CodePatch:                    "PATCH",
 	RspCodeCreated:               "Created",
 	RspCodeDeleted:               "Deleted",
 	RspCodeValid:                 "Valid",
