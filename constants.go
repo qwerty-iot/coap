@@ -52,6 +52,7 @@ const (
 	CodeDelete COAPCode = 4
 	CodeFetch  COAPCode = 5
 	CodePatch  COAPCode = 6
+	CodeIPatch COAPCode = 7
 )
 
 // Response Codes
@@ -87,6 +88,7 @@ var codeNames = [256]string{
 	CodeDelete:                   "DELETE",
 	CodeFetch:                    "FETCH",
 	CodePatch:                    "PATCH",
+	CodeIPatch:                   "iPATCH",
 	RspCodeCreated:               "Created",
 	RspCodeDeleted:               "Deleted",
 	RspCodeValid:                 "Valid",
