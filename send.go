@@ -6,7 +6,10 @@ package coap
 
 import (
 	"errors"
+	"strings"
 	"time"
+
+	"github.com/qwerty-iot/dtls/v2"
 )
 
 func Send(addr string, msg *Message, options *SendOptions) (*Message, error) {
@@ -99,8 +102,10 @@ func send(addr string, msg *Message, options *SendOptions) (*Message, error) {
 		return nil, err
 	}
 
-	peer := dtlsFindPeer(addr)
-	if peer != nil {
+	var peer *dtls.Peer
+	if strings.HasPrefix(addr, "proxy:") {
+		err = proxyRecv(addr, data)
+	} else if peer = dtlsFindPeer(addr); peer != nil {
 		err = peer.Write(data)
 	} else {
 		err = udpSend(addr, data)
@@ -124,8 +129,9 @@ func send(addr string, msg *Message, options *SendOptions) (*Message, error) {
 					return rsp, nil
 				case <-time.After(options.retryTimeout):
 					//retransmit
-					peer = dtlsFindPeer(addr)
-					if peer != nil {
+					if strings.HasPrefix(addr, "proxy:") {
+						err = proxyRecv(addr, data)
+					} else if peer != nil {
 						err = peer.Write(data)
 					} else {
 						err = udpSend(addr, data)
