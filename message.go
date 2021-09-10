@@ -160,7 +160,11 @@ func (m Message) ParseQuery() map[string]string {
 	for _, q := range qa {
 		if qs, ok := q.(string); ok {
 			ss := strings.Split(qs, "=")
-			m.queryVars[ss[0]] = ss[1]
+			if len(ss) == 2 {
+				m.queryVars[ss[0]] = ss[1]
+			} else {
+				m.queryVars[qs] = ""
+			}
 		}
 	}
 	return m.queryVars
