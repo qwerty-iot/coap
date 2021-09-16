@@ -49,6 +49,7 @@ func AddRoute(path string, callback RouteCallback) {
 			routeMap = route.children
 		}
 	}
+	return
 }
 
 func matchRoutes(msg *Message) RouteCallback {
@@ -70,6 +71,7 @@ func matchRoutes(msg *Message) RouteCallback {
 				if msg.PathVars == nil {
 					msg.PathVars = map[string]string{}
 				}
+				routeMap = route.children
 				msg.PathVars[route.key] = part
 			} else {
 				break
