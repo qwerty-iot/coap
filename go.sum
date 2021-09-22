@@ -6,6 +6,8 @@ github.com/qwerty-iot/dtls/v2 v2.3.1 h1:T8nqfWNZFTceDJFJKIFtDbdgP9a2QKysHW8owkt6
 github.com/qwerty-iot/dtls/v2 v2.3.1/go.mod h1:6Uw24D2Ox0VWZXoexqf7AJRAx2uwH0VYRJDVa09z5iI=
 github.com/qwerty-iot/dtls/v2 v2.3.2 h1:dOwuXgy62qAGhnrENXpvHwV+JYBjpVi4KcIioacQVjY=
 github.com/qwerty-iot/dtls/v2 v2.3.2/go.mod h1:/MEdWlH8mxAvAtTPea9Y0+3uB9LvDfN6vTsImACqhSM=
+github.com/qwerty-iot/dtls/v2 v2.4.0 h1:GR3y3jxRYjrLPgWpWlVGejYjCVzV8nSiifBE8vhutbU=
+github.com/qwerty-iot/dtls/v2 v2.4.0/go.mod h1:/MEdWlH8mxAvAtTPea9Y0+3uB9LvDfN6vTsImACqhSM=
 github.com/qwerty-iot/tox v1.0.9 h1:mFKxh0sYfTxR7wA0W0L5Vuk+fx83vJsA7YUrwmV1P/I=
 github.com/qwerty-iot/tox v1.0.9/go.mod h1:ZPM0dCX2XqO7XO35V2aaS08niUZRaK8pRoc4z7zcmDY=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
