@@ -29,13 +29,13 @@ func handleMessage(req *Message) *Message {
 		} else if !block1.More {
 			// reassemble data
 			var err error
-			rsp, err = blockCacheGet(req, -1, 0)
+			trsp, err := blockCacheGet(req, -1, 0)
 			if err != nil {
 				logError(req, err, "coap: error retrieving block1 cache")
 				rsp = req.MakeReply(RspCodeInternalServerError, nil)
 				return rsp
 			}
-			rsp.WithBlock1(block1)
+			req.Payload = trsp.Payload
 		} else {
 			// append data
 			err := blockCacheAppend(req)
@@ -81,6 +81,9 @@ func handleMessage(req *Message) *Message {
 		}
 
 		if rsp != nil {
+			if block1 != nil {
+				rsp.WithBlock1(block1)
+			}
 			if rsp.RequiresBlockwise() {
 				//need to send BLOCK2
 				bs := config.BlockDefaultSize
