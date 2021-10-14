@@ -6,6 +6,7 @@ package coap
 
 import (
 	"errors"
+	"math/rand"
 	"strings"
 	"time"
 
@@ -15,6 +16,10 @@ import (
 func Send(addr string, msg *Message, options *SendOptions) (*Message, error) {
 	var rsp *Message
 	var err error
+
+	if options != nil && options.blockSize > 0 {
+		msg.Meta.BlockSize = options.blockSize
+	}
 
 	if msg.RequiresBlockwise() {
 		// chunk and send
@@ -92,8 +97,11 @@ func send(addr string, msg *Message, options *SendOptions) (*Message, error) {
 	if options == nil {
 		options = NewOptions()
 	}
+
 	var pendingChan chan *Message
-	if msg.Type != TypeAcknowledgement {
+	if msg.IsConfirmable() {
+		nstartInc(addr, options.nStart)
+		defer nstartDec(addr)
 		pendingChan = pendingSave(msg)
 	}
 
@@ -115,19 +123,20 @@ func send(addr string, msg *Message, options *SendOptions) (*Message, error) {
 	}
 
 	if msg.Type != TypeAcknowledgement && pendingChan != nil {
-		if options.retryCount == -1 {
+		timeout := options.ackTimeout + time.Second*time.Duration(options.ackTimeout.Seconds()*((options.randomFactor-1.0)*rand.Float64()))
+		if options.maxRetransmit == -1 {
 			select {
 			case rsp := <-pendingChan:
 				return rsp, nil
-			case <-time.After(options.retryTimeout):
+			case <-time.After(timeout):
 				return nil, ErrTimeout
 			}
 		} else {
-			for retryCount := 0; retryCount < options.retryCount; retryCount++ {
+			for retryCount := 0; retryCount < options.maxRetransmit; retryCount++ {
 				select {
 				case rsp := <-pendingChan:
 					return rsp, nil
-				case <-time.After(options.retryTimeout):
+				case <-time.After(timeout):
 					//retransmit
 					if strings.HasPrefix(addr, "proxy:") {
 						err = proxyRecv(addr, data)

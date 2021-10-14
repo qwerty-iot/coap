@@ -15,6 +15,7 @@ type Config struct {
 	ObserveNotFoundCallback ObserveNotFoundCallback
 	BlockDefaultSize        int
 	BlockInactivityTimeout  time.Duration
+	NStart                  int
 }
 
 var config = &Config{
@@ -22,6 +23,7 @@ var config = &Config{
 	DeduplicateInterval:    time.Second * 20,
 	BlockDefaultSize:       1024,
 	BlockInactivityTimeout: time.Second * 120,
+	NStart:                 10,
 }
 
 func Configure(conf *Config) {
@@ -40,6 +42,9 @@ func Configure(conf *Config) {
 		}
 		if conf.BlockInactivityTimeout > 0 {
 			config.BlockInactivityTimeout = conf.BlockInactivityTimeout
+		}
+		if conf.NStart > 0 {
+			config.NStart = conf.NStart
 		}
 	}
 
