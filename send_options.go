@@ -14,13 +14,13 @@ type SendOptions struct {
 	nStart        int
 }
 
-func NewOptions() *SendOptions {
+func (s *Server) NewOptions() *SendOptions {
 	return &SendOptions{
 		maxRetransmit: 3,
 		ackTimeout:    time.Second * 5,
 		randomFactor:  1.5,
-		blockSize:     config.BlockDefaultSize,
-		nStart:        config.NStart,
+		blockSize:     s.config.BlockDefaultSize,
+		nStart:        s.config.NStart,
 	}
 }
 

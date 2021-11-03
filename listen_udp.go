@@ -9,9 +9,13 @@ import (
 	"time"
 )
 
-var udpListener *net.UDPConn
+type UdpListener struct {
+	name    string
+	socket  *net.UDPConn
+	handler *Server
+}
 
-func ListenUdp(name string, addr string) error {
+func (l *UdpListener) listen(name string, addr string, handler *Server) error {
 
 	uaddr, err := net.ResolveUDPAddr("udp", addr)
 	if err != nil {
@@ -22,24 +26,26 @@ func ListenUdp(name string, addr string) error {
 		return err
 	}
 
-	udpListener = listener
-	go udpReader(name, listener)
+	l.socket = listener
+	l.name = name
+	l.handler = handler
+	go l.reader()
 	return nil
 }
 
-func udpReader(name string, listener *net.UDPConn) {
+func (l *UdpListener) reader() {
 
 	var rawReq = make([]byte, 8192)
 
-	rawLen, from, err := listener.ReadFromUDP(rawReq)
+	rawLen, from, err := l.socket.ReadFromUDP(rawReq)
 	if err != nil {
 		logWarn(nil, err, "coap: error reading COAP packet")
-		go udpReader(name, listener)
+		go l.reader()
 		return
 	}
 	rawReq = rawReq[:rawLen]
 
-	go udpReader(name, listener)
+	go l.reader()
 
 	var req Message
 	if err := req.unmarshalBinary(rawReq); err != nil {
@@ -47,10 +53,10 @@ func udpReader(name string, listener *net.UDPConn) {
 		return
 	}
 	req.Meta.RemoteAddr = from.String()
-	req.Meta.ListenerName = name
+	req.Meta.ListenerName = l.name
 	req.Meta.ReceivedAt = time.Now().UTC()
 
-	rsp := handleMessage(&req)
+	rsp := l.handler.handleMessage(&req)
 
 	if rsp != nil {
 		rawRsp, err := rsp.marshalBinary()
@@ -60,7 +66,7 @@ func udpReader(name string, listener *net.UDPConn) {
 		}
 
 		if rawRsp != nil {
-			_, err = listener.WriteToUDP(rawRsp, from)
+			_, err = l.socket.WriteToUDP(rawRsp, from)
 			if err != nil {
 				logWarn(nil, err, "coap: error writing coap response")
 			}
@@ -70,12 +76,12 @@ func udpReader(name string, listener *net.UDPConn) {
 	return
 }
 
-func udpSend(addr string, data []byte) error {
+func (l *UdpListener) Send(addr string, data []byte) error {
 	uaddr, err := net.ResolveUDPAddr("udp", addr)
 	if err != nil {
 		return err
 	}
-	_, err = udpListener.WriteToUDP(data, uaddr)
+	_, err = l.socket.WriteToUDP(data, uaddr)
 	if err != nil {
 		return err
 	}

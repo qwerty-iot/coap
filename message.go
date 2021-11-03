@@ -75,17 +75,17 @@ func (m Message) RequiresBlockwise() bool {
 			return false
 		}
 	} else {
-		if m.Payload != nil && len(m.Payload) > config.BlockDefaultSize {
-			return true
-		} else {
-			return false
-		}
+		return false
 	}
 }
 
 // IsConfirmable returns true if this message is confirmable.
 func (m Message) IsConfirmable() bool {
 	return m.Type == TypeConfirmable
+}
+
+func (m Message) IsRequest() bool {
+	return m.Code < 10
 }
 
 func (m Message) PacketSize() int {
@@ -215,6 +215,11 @@ func (m *Message) WithPath(s []string) *Message {
 	return m
 }
 
+func (m *Message) WithToken(token []byte) *Message {
+	m.Token = token
+	return m
+}
+
 func (m *Message) WithPayload(payload []byte) *Message {
 	m.Payload = payload
 	return m
@@ -274,6 +279,10 @@ func (m *Message) WithContentFormat(mt MediaType) *Message {
 	return m
 }
 
+func (m *Message) WithType(ty COAPType) *Message {
+	m.Type = ty
+	return m
+}
 func (m *Message) WithCode(code COAPCode) *Message {
 	m.Code = code
 	return m

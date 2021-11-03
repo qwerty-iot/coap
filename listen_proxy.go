@@ -11,7 +11,7 @@ import (
 
 var ProxyRecv func(rawReq []byte, to string) error
 
-func ProxySend(rawReq []byte, from string) ([]byte, error) {
+func (s *Server) ProxySend(rawReq []byte, from string) ([]byte, error) {
 
 	var req Message
 	if err := req.unmarshalBinary(rawReq); err != nil {
@@ -22,7 +22,7 @@ func ProxySend(rawReq []byte, from string) ([]byte, error) {
 	req.Meta.ListenerName = "proxy"
 	req.Meta.ReceivedAt = time.Now().UTC()
 
-	rsp := handleMessage(&req)
+	rsp := s.handleMessage(&req)
 
 	if rsp != nil {
 		rawRsp, err := rsp.marshalBinary()

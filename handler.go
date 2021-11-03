@@ -4,13 +4,13 @@
 
 package coap
 
-func handleMessage(req *Message) *Message {
+func (s *Server) handleMessage(req *Message) *Message {
 	var rsp *Message
 
 	var dedup *dedupEntry
 	if req.Type == TypeConfirmable {
 		var ok bool
-		dedup, ok = deduplicate(req)
+		dedup, ok = s.deduplicate(req)
 		if !ok {
 			if dedup.pending {
 				return nil
@@ -24,12 +24,12 @@ func handleMessage(req *Message) *Message {
 			// init waiter
 			rsp = req.MakeReply(RspCodeContinue, nil)
 			rsp.WithBlock1(block1)
-			blockCachePut(req, "")
+			s.blockCachePut(req, "")
 			return rsp
 		} else if !block1.More {
 			// reassemble data
 			var err error
-			trsp, err := blockCacheGet(req, -1, 0)
+			trsp, err := s.blockCacheGet(req, -1, 0)
 			if err != nil {
 				logError(req, err, "coap: error retrieving block1 cache")
 				rsp = req.MakeReply(RspCodeInternalServerError, nil)
@@ -38,7 +38,7 @@ func handleMessage(req *Message) *Message {
 			req.Payload = trsp.Payload
 		} else {
 			// append data
-			err := blockCacheAppend(req)
+			err := s.blockCacheAppend(req)
 			if err != nil {
 				logError(req, err, "coap: error appending block1 cache")
 				rsp = req.MakeReply(RspCodeInternalServerError, nil)
@@ -51,10 +51,10 @@ func handleMessage(req *Message) *Message {
 	}
 
 	if req.Type == TypeAcknowledgement {
-		found := handleAcknowledgement(req)
+		found := s.handleAcknowledgement(req)
 		if !found {
 			//note, we won't send a reset on a bad notify in this case
-			handleNotify(req)
+			s.handleNotify(req)
 		}
 		return nil
 	}
@@ -64,13 +64,13 @@ func handleMessage(req *Message) *Message {
 	if block2 == nil || block2.Num == 0 && req.Type == TypeConfirmable || req.Type != TypeConfirmable {
 		switch req.Type {
 		case TypeConfirmable:
-			if req.Option(OptObserve) != nil {
-				rsp = handleNotify(req)
+			if req.Option(OptObserve) != nil && !req.IsRequest() {
+				rsp = s.handleNotify(req)
 			} else {
-				rsp = handleConfirmable(req)
+				rsp = s.handleConfirmable(req)
 			}
 		case TypeNonConfirmable:
-			rsp = handleNotify(req)
+			rsp = s.handleNotify(req)
 		default:
 			rsp = &Message{
 				Type:      TypeReset,
@@ -86,17 +86,17 @@ func handleMessage(req *Message) *Message {
 			}
 			if rsp.RequiresBlockwise() {
 				//need to send BLOCK2
-				bs := config.BlockDefaultSize
+				bs := s.config.BlockDefaultSize
 				if rsp.Meta.BlockSize != 0 {
 					bs = rsp.Meta.BlockSize
 				}
 				block2 = blockInit(0, true, bs)
 
 				//store request in block cache
-				blockCachePut(rsp, req.getBlockKey())
+				s.blockCachePut(rsp, req.getBlockKey())
 				//rewrite rsp to include block0
 				var err error
-				rsp, err = blockCacheGet(req, 0, bs)
+				rsp, err = s.blockCacheGet(req, 0, bs)
 				if err != nil {
 					logError(req, err, "coap: error getting first block2")
 					rsp = req.MakeReply(RspCodeInternalServerError, nil)
@@ -107,7 +107,7 @@ func handleMessage(req *Message) *Message {
 	} else {
 		// retrieve message
 		var err error
-		rsp, err = blockCacheGet(req, block2.Num, block2.Size)
+		rsp, err = s.blockCacheGet(req, block2.Num, block2.Size)
 		if err != nil {
 			logError(req, err, "coap: error getting block2 response")
 			rsp = req.MakeReply(RspCodeInternalServerError, nil)

@@ -4,7 +4,7 @@
 
 package coap
 
-func handleConfirmable(req *Message) *Message {
+func (s *Server) handleConfirmable(req *Message) *Message {
 	var rsp *Message
 
 	if req.Code == CodeEmpty {
@@ -19,13 +19,13 @@ func handleConfirmable(req *Message) *Message {
 
 	if req.Code > 10 {
 		// delayed ack
-		if handleAcknowledgement(req) {
+		if s.handleAcknowledgement(req) {
 			rsp = req.MakeReply(CodeEmpty, nil)
 		} else {
 			rsp = req.MakeReply(RspCodeNotFound, nil)
 		}
 	} else {
-		callback := matchRoutes(req)
+		callback := s.matchRoutes(req)
 		if callback != nil {
 			rsp = callback(req)
 		} else {

@@ -18,9 +18,9 @@ type Observation struct {
 	arg      interface{}
 }
 
-func Observe(addr string, code COAPCode, path string, payload []byte, encoding MediaType, callback ObserveCallback, arg interface{}, options *SendOptions) (string, error) {
+func (s *Server) Observe(addr string, code COAPCode, path string, payload []byte, encoding MediaType, callback ObserveCallback, arg interface{}, options *SendOptions) (string, error) {
 	if options == nil {
-		options = NewOptions()
+		options = s.NewOptions()
 	}
 
 	req := &Message{Type: TypeConfirmable, Code: code}
@@ -36,7 +36,7 @@ func Observe(addr string, code COAPCode, path string, payload []byte, encoding M
 		req.Payload = payload
 	}
 
-	rsp, err := Send(addr, req, options)
+	rsp, err := s.Send(addr, req, options)
 	if err != nil {
 		return "", err
 	}
@@ -53,9 +53,9 @@ func Observe(addr string, code COAPCode, path string, payload []byte, encoding M
 	return string(req.Token), nil
 }
 
-func ObserveCancel(addr string, path string, token string, options *SendOptions) error {
+func (s *Server) ObserveCancel(addr string, path string, token string, options *SendOptions) error {
 	if options == nil {
-		options = NewOptions()
+		options = s.NewOptions()
 	}
 
 	req := &Message{Type: TypeConfirmable, Code: CodeGet}
@@ -65,7 +65,7 @@ func ObserveCancel(addr string, path string, token string, options *SendOptions)
 
 	observeMap.Delete(token)
 
-	rsp, err := Send(addr, req, options)
+	rsp, err := s.Send(addr, req, options)
 	if err != nil {
 		return err
 	}
@@ -90,12 +90,12 @@ func ObserveTokens(callback func(string)) {
 	})
 }
 
-func getObserve(msg *Message) *Observation {
+func (s *Server) getObserve(msg *Message) *Observation {
 	c, found := observeMap.Load(string(msg.Token))
 	if found {
 		return c.(*Observation)
 	} else {
-		if config.ObserveNotFoundCallback != nil && config.ObserveNotFoundCallback(msg) {
+		if s.config.ObserveNotFoundCallback != nil && s.config.ObserveNotFoundCallback(msg) {
 			c, found = observeMap.Load(string(msg.Token))
 			if found {
 				return c.(*Observation)

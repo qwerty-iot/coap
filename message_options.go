@@ -145,6 +145,8 @@ func (o option) toBytes() []byte {
 		v = uint32(i)
 	case int:
 		v = uint32(i)
+	case uint16:
+		v = uint32(i)
 	case int32:
 		v = uint32(i)
 	case uint:

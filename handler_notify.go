@@ -4,10 +4,10 @@
 
 package coap
 
-func handleNotify(req *Message) *Message {
+func (s *Server) handleNotify(req *Message) *Message {
 	var rsp *Message
 
-	if handleAcknowledgement(req) {
+	if s.handleAcknowledgement(req) {
 		if req.IsConfirmable() {
 			return req.MakeReply(CodeEmpty, nil)
 		} else {
@@ -15,7 +15,7 @@ func handleNotify(req *Message) *Message {
 		}
 	}
 
-	c := getObserve(req)
+	c := s.getObserve(req)
 
 	if c == nil {
 		logWarn(nil, nil, "coap: observation not found")

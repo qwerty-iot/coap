@@ -10,21 +10,26 @@ import (
 	"github.com/qwerty-iot/dtls/v2"
 )
 
-var dtlsListener *dtls.Listener
+type DtlsListener struct {
+	name    string
+	socket  *dtls.Listener
+	handler *Server
+}
 
-func ListenDtls(name string, listener *dtls.Listener) error {
-	go dtlsReader(name, listener)
+func (l *DtlsListener) listen(name string, listener *dtls.Listener, handler *Server) error {
+	l.socket = listener
+	l.name = name
+	l.handler = handler
+	go l.reader()
 	return nil
 }
 
-func dtlsReader(name string, listener *dtls.Listener) {
+func (l *DtlsListener) reader() {
 
-	dtlsListener = listener
-
-	rawReq, peer := listener.Read()
+	rawReq, peer := l.socket.Read()
 
 	//launch new reader
-	go dtlsReader(name, listener)
+	go l.reader()
 
 	var req Message
 	if err := req.unmarshalBinary(rawReq); err != nil {
@@ -35,10 +40,10 @@ func dtlsReader(name string, listener *dtls.Listener) {
 	req.Meta.DtlsIdentity = peer.SessionIdentityString()
 	req.Meta.DtlsPublicKey = peer.SessionPublicKey()
 	req.Meta.DtlsCertificate = peer.SessionCertificate()
-	req.Meta.ListenerName = name
+	req.Meta.ListenerName = l.name
 	req.Meta.ReceivedAt = time.Now().UTC()
 
-	rsp := handleMessage(&req)
+	rsp := l.handler.handleMessage(&req)
 
 	if rsp != nil {
 		rawRsp, err := rsp.marshalBinary()
@@ -58,7 +63,10 @@ func dtlsReader(name string, listener *dtls.Listener) {
 	return
 }
 
-func dtlsFindPeer(addr string) *dtls.Peer {
-	peer, _ := dtlsListener.FindPeer(addr)
+func (l *DtlsListener) FindPeer(addr string) *dtls.Peer {
+	if l == nil {
+		return nil
+	}
+	peer, _ := l.socket.FindPeer(addr)
 	return peer
 }

@@ -10,19 +10,17 @@ import (
 
 type RouteCallback func(req *Message) *Message
 
-var routes = make(map[string]*routeEntry)
-
 type routeEntry struct {
 	children map[string]*routeEntry
 	key      string
 	callback RouteCallback
 }
 
-func AddRoute(path string, callback RouteCallback) {
+func (s *Server) AddRoute(path string, callback RouteCallback) {
 	pathParts := strings.Split(path, "/")
 	var route *routeEntry
 	var found bool
-	routeMap := routes
+	routeMap := s.routes
 	for idx, part := range pathParts {
 		if len(part) == 0 {
 			continue
@@ -52,13 +50,13 @@ func AddRoute(path string, callback RouteCallback) {
 	return
 }
 
-func matchRoutes(msg *Message) RouteCallback {
+func (s *Server) matchRoutes(msg *Message) RouteCallback {
 	pathParts := strings.Split(msg.PathString(), "/")
 
 	var route *routeEntry
 	var found bool
 
-	routeMap := routes
+	routeMap := s.routes
 
 	var deepestCallback RouteCallback
 	for _, part := range pathParts {

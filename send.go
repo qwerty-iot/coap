@@ -13,21 +13,20 @@ import (
 	"github.com/qwerty-iot/dtls/v2"
 )
 
-func Send(addr string, msg *Message, options *SendOptions) (*Message, error) {
+func (s *Server) Send(addr string, msg *Message, options *SendOptions) (*Message, error) {
 	var rsp *Message
 	var err error
 
-	if options != nil && options.blockSize > 0 {
-		msg.Meta.BlockSize = options.blockSize
+	if options == nil {
+		options = s.NewOptions()
 	}
+
+	msg.Meta.BlockSize = options.blockSize
 
 	if msg.RequiresBlockwise() {
 		// chunk and send
 		data := msg.Payload
-		blockSize := config.BlockDefaultSize
-		if msg.Meta.BlockSize != 0 {
-			blockSize = msg.Meta.BlockSize
-		}
+		blockSize := msg.Meta.BlockSize
 		blockNum := 0
 		for {
 			offset := blockNum * blockSize
@@ -42,7 +41,7 @@ func Send(addr string, msg *Message, options *SendOptions) (*Message, error) {
 			if blockNum == 0 {
 				msg.WithSize1(len(data))
 			}
-			rsp, err = send(addr, msg, options)
+			rsp, err = s.send(addr, msg, options)
 			if err != nil {
 				return nil, err
 			}
@@ -61,48 +60,47 @@ func Send(addr string, msg *Message, options *SendOptions) (*Message, error) {
 			blockNum++
 		}
 	} else {
-		rsp, err = send(addr, msg, options)
+		rsp, err = s.send(addr, msg, options)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	block2 := rsp.getBlock2()
-	if block2 != nil {
-		//blockwise requests
-		var data []byte
-		data = append(data, rsp.Payload...)
-
-		block := 1
-		for {
-			bm := blockInit(block, false, block2.Size)
-			msg.WithBlock2(bm)
-			rsp, err = send(addr, msg, options)
-			if err != nil {
-				return nil, err
-			}
+	if rsp != nil {
+		block2 := rsp.getBlock2()
+		if block2 != nil {
+			//blockwise requests
+			var data []byte
 			data = append(data, rsp.Payload...)
-			block++
-			block2 = rsp.getBlock2()
-			if !block2.More {
-				break
+
+			block := 1
+			for {
+				bm := blockInit(block, false, block2.Size)
+				msg.WithBlock2(bm)
+				rsp, err = s.send(addr, msg, options)
+				if err != nil {
+					return nil, err
+				}
+				data = append(data, rsp.Payload...)
+				block++
+				block2 = rsp.getBlock2()
+				if !block2.More {
+					break
+				}
 			}
+			rsp.Payload = data
 		}
-		rsp.Payload = data
 	}
+
 	return rsp, err
 }
 
-func send(addr string, msg *Message, options *SendOptions) (*Message, error) {
-	if options == nil {
-		options = NewOptions()
-	}
-
+func (s *Server) send(addr string, msg *Message, options *SendOptions) (*Message, error) {
 	var pendingChan chan *Message
 	if msg.IsConfirmable() {
 		nstartInc(addr, options.nStart)
 		defer nstartDec(addr)
-		pendingChan = pendingSave(msg)
+		pendingChan = s.pendingSave(msg)
 	}
 
 	data, err := msg.marshalBinary()
@@ -113,10 +111,12 @@ func send(addr string, msg *Message, options *SendOptions) (*Message, error) {
 	var peer *dtls.Peer
 	if strings.HasPrefix(addr, "proxy:") {
 		err = proxyRecv(addr, data)
-	} else if peer = dtlsFindPeer(addr); peer != nil {
+	} else if peer = s.dtlsListener.FindPeer(addr); peer != nil {
 		err = peer.Write(data)
+	} else if s.udpListener != nil {
+		err = s.udpListener.Send(addr, data)
 	} else {
-		err = udpSend(addr, data)
+		err = errors.New("coap: no valid listener")
 	}
 	if err != nil {
 		return nil, err
@@ -142,8 +142,10 @@ func send(addr string, msg *Message, options *SendOptions) (*Message, error) {
 						err = proxyRecv(addr, data)
 					} else if peer != nil {
 						err = peer.Write(data)
+					} else if s.udpListener != nil {
+						err = s.udpListener.Send(addr, data)
 					} else {
-						err = udpSend(addr, data)
+						err = errors.New("coap: no valid listener")
 					}
 					if err != nil {
 						return nil, err

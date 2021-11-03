@@ -4,38 +4,29 @@
 
 package coap
 
-import (
-	"sync"
-	"time"
-)
-
 type pendingEntry struct {
 	c chan *Message
 }
 
-var pendingMap = map[string]*pendingEntry{}
-var pendingMux sync.Mutex
-var pendingMsgId uint16 = uint16(time.Now().UnixNano() % 32767)
-
-func pendingSave(msg *Message) chan *Message {
+func (s *Server) pendingSave(msg *Message) chan *Message {
 	pe := &pendingEntry{}
 	pe.c = make(chan *Message, 1)
 	if len(msg.Token) == 0 {
 		msg.Token = []byte(randomString(8))
 	}
-	pendingMux.Lock()
-	msg.MessageID = pendingMsgId
-	pendingMsgId = pendingMsgId + 1
-	pendingMap[string(msg.Token)] = pe
-	pendingMux.Unlock()
+	s.pendingMux.Lock()
+	msg.MessageID = s.pendingMsgId
+	s.pendingMsgId = s.pendingMsgId + 1
+	s.pendingMap[string(msg.Token)] = pe
+	s.pendingMux.Unlock()
 	return pe.c
 }
 
-func handleAcknowledgement(req *Message) bool {
-	pendingMux.Lock()
-	pe, found := pendingMap[string(req.Token)]
-	delete(pendingMap, string(req.Token))
-	pendingMux.Unlock()
+func (s *Server) handleAcknowledgement(req *Message) bool {
+	s.pendingMux.Lock()
+	pe, found := s.pendingMap[string(req.Token)]
+	delete(s.pendingMap, string(req.Token))
+	s.pendingMux.Unlock()
 
 	if found {
 		select {
