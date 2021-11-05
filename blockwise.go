@@ -3,7 +3,6 @@ package coap
 import (
 	"errors"
 	"math"
-	"sync"
 	"time"
 )
 
@@ -13,10 +12,10 @@ type BlockMetadata struct {
 	Num  int
 }
 
-func expireBlocks() {
+func (s *Server) expireBlocks() {
 	for {
 		var toDel []string
-		blockCache.Range(func(key, value interface{}) bool {
+		s.blockCache.Range(func(key, value interface{}) bool {
 			bce, ok := value.(*blockCacheEntry)
 			if ok && time.Now().After(bce.expires) {
 				toDel = append(toDel, key.(string))
@@ -24,7 +23,7 @@ func expireBlocks() {
 			return true
 		})
 		for _, key := range toDel {
-			blockCache.Delete(key)
+			s.blockCache.Delete(key)
 		}
 		time.Sleep(time.Second * 2)
 	}
@@ -125,17 +124,15 @@ type blockCacheEntry struct {
 	expires time.Time
 }
 
-var blockCache sync.Map
-
-func blockCachePut(req *Message, key string) {
+func (s *Server) blockCachePut(req *Message, key string) {
 	if len(key) == 0 {
 		key = req.getBlockKey()
 	}
-	blockCache.Store(key, &blockCacheEntry{rsp: req, expires: time.Now().Add(config.BlockInactivityTimeout)})
+	s.blockCache.Store(key, &blockCacheEntry{rsp: req, expires: time.Now().Add(s.config.BlockInactivityTimeout)})
 }
 
-func blockCacheAppend(req *Message) error {
-	bcei, ok := blockCache.Load(req.getBlockKey())
+func (s *Server) blockCacheAppend(req *Message) error {
+	bcei, ok := s.blockCache.Load(req.getBlockKey())
 	if !ok {
 		return errors.New("block not found")
 	}
@@ -144,8 +141,8 @@ func blockCacheAppend(req *Message) error {
 	return nil
 }
 
-func blockCacheGet(req *Message, num int, sz int) (*Message, error) {
-	bcei, ok := blockCache.Load(req.getBlockKey())
+func (s *Server) blockCacheGet(req *Message, num int, sz int) (*Message, error) {
+	bcei, ok := s.blockCache.Load(req.getBlockKey())
 	if !ok {
 		return nil, errors.New("block not found")
 	}
@@ -165,7 +162,7 @@ func blockCacheGet(req *Message, num int, sz int) (*Message, error) {
 		} else {
 			blockSize = sz
 			more = true
-			bce.expires = time.Now().Add(config.BlockInactivityTimeout)
+			bce.expires = time.Now().Add(s.config.BlockInactivityTimeout)
 		}
 
 		newRsp.Payload = bce.rsp.Payload[offset : offset+blockSize]
@@ -188,10 +185,10 @@ func blockCacheGet(req *Message, num int, sz int) (*Message, error) {
 	return &newRsp, nil
 }
 
-func BlockCacheSize() (int64, int64) {
+func (s *Server) BlockCacheSize() (int64, int64) {
 	size := int64(0)
 	count := int64(0)
-	blockCache.Range(func(key, value interface{}) bool {
+	s.blockCache.Range(func(key, value interface{}) bool {
 		size += int64(len(value.(*Message).Payload))
 		count++
 		return true
