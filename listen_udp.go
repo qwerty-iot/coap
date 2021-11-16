@@ -37,15 +37,19 @@ func (l *UdpListener) reader() {
 
 	var rawReq = make([]byte, 8192)
 
-	rawLen, from, err := l.socket.ReadFromUDP(rawReq)
-	if err != nil {
-		logWarn(nil, err, "coap: error reading COAP packet")
-		go l.reader()
-		return
+	for {
+		rawLen, from, err := l.socket.ReadFromUDP(rawReq)
+		if err != nil {
+			logWarn(nil, err, "coap: error reading COAP packet")
+			go l.reader()
+			return
+		}
+		newReq := append([]byte(nil), rawReq[:rawLen]...)
+		go l.handle(newReq, from)
 	}
-	rawReq = rawReq[:rawLen]
+}
 
-	go l.reader()
+func (l *UdpListener) handle(rawReq []byte, from *net.UDPAddr) {
 
 	var req Message
 	if err := req.unmarshalBinary(rawReq); err != nil {
