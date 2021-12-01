@@ -41,7 +41,7 @@ func (s *Server) handleNotify(req *Message) *Message {
 		if req.Type == TypeConfirmable {
 			rsp = &Message{
 				Type:      TypeAcknowledgement,
-				Code:      RspCodeChanged,
+				Code:      CodeEmpty,
 				MessageID: req.MessageID,
 				Token:     req.Token,
 			}
