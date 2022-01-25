@@ -5,6 +5,7 @@
 package coap
 
 import (
+	"encoding/hex"
 	"fmt"
 	"log"
 	"time"
@@ -44,7 +45,7 @@ func SetLogLevel(level string) {
 func defaultLogFunc(ts time.Time, level string, msg *Message, err error, l string) {
 	loc := ""
 	if msg != nil && len(msg.Meta.RemoteAddr) != 0 {
-		loc = msg.Meta.RemoteAddr
+		loc = fmt.Sprintf("%s][%d][%s", msg.Meta.RemoteAddr, msg.MessageID, hex.EncodeToString(msg.Token))
 	}
 	if err != nil {
 		log.Printf(" [" + level + "] [" + loc + "] " + l + "(err: " + err.Error() + ")")
@@ -65,4 +66,11 @@ func logWarn(msg *Message, err error, f string, args ...interface{}) {
 		return
 	}
 	logFunc(time.Now(), LogLevelWarn, msg, err, fmt.Sprintf(f, args...))
+}
+
+func logDebug(msg *Message, err error, f string, args ...interface{}) {
+	if logLevel < 4 {
+		return
+	}
+	logFunc(time.Now(), LogLevelDebug, msg, err, fmt.Sprintf(f, args...))
 }

@@ -17,6 +17,8 @@ func (s *Server) Send(addr string, msg *Message, options *SendOptions) (*Message
 	var rsp *Message
 	var err error
 
+	msg.Meta.RemoteAddr = addr
+
 	if options == nil {
 		options = s.NewOptions()
 	}
@@ -48,7 +50,7 @@ func (s *Server) Send(addr string, msg *Message, options *SendOptions) (*Message
 			if more && rsp.Code != RspCodeContinue {
 				return nil, errors.New("expected block transfer continue response")
 			}
-			block1 := rsp.getBlock1()
+			block1 := rsp.GetBlock1()
 			if block1 == nil {
 				return nil, errors.New("expected block1 in response")
 			}
@@ -67,7 +69,7 @@ func (s *Server) Send(addr string, msg *Message, options *SendOptions) (*Message
 	}
 
 	if rsp != nil {
-		block2 := rsp.getBlock2()
+		block2 := rsp.GetBlock2()
 		if block2 != nil {
 			//blockwise requests
 			var data []byte
@@ -83,7 +85,7 @@ func (s *Server) Send(addr string, msg *Message, options *SendOptions) (*Message
 				}
 				data = append(data, rsp.Payload...)
 				block++
-				block2 = rsp.getBlock2()
+				block2 = rsp.GetBlock2()
 				if !block2.More {
 					break
 				}
@@ -97,6 +99,9 @@ func (s *Server) Send(addr string, msg *Message, options *SendOptions) (*Message
 
 func (s *Server) send(addr string, msg *Message, options *SendOptions) (*Message, error) {
 	var pendingChan chan *Message
+
+	msg.Meta.RemoteAddr = addr
+
 	if msg.IsConfirmable() {
 		nstartInc(addr, options.nStart)
 		defer nstartDec(addr)
@@ -110,14 +115,21 @@ func (s *Server) send(addr string, msg *Message, options *SendOptions) (*Message
 
 	var peer *dtls.Peer
 	if strings.HasPrefix(addr, "proxy:") {
+		msg.Meta.ListenerName = "proxy"
 		err = proxyRecv(addr, data)
 	} else if peer = s.dtlsListener.FindPeer(addr); peer != nil {
+		msg.Meta.DtlsIdentity = peer.SessionIdentityString()
+		msg.Meta.DtlsCertificate = peer.SessionCertificate()
+		msg.Meta.DtlsPublicKey = peer.SessionPublicKey()
+		msg.Meta.ListenerName = s.dtlsListener.name
 		err = peer.Write(data)
 	} else if s.udpListener != nil {
+		msg.Meta.ListenerName = s.udpListener.name
 		err = s.udpListener.Send(addr, data)
 	} else {
 		err = errors.New("coap: no valid listener")
 	}
+	logDebug(msg, err, "sent message")
 	if err != nil {
 		return nil, err
 	}
@@ -127,17 +139,21 @@ func (s *Server) send(addr string, msg *Message, options *SendOptions) (*Message
 		if options.maxRetransmit == -1 {
 			select {
 			case rsp := <-pendingChan:
+				logDebug(rsp, err, "send ack'd (no retries)")
 				return rsp, nil
 			case <-time.After(timeout):
+				logDebug(msg, err, "send ack timeout (no retries)")
 				return nil, ErrTimeout
 			}
 		} else {
 			for retryCount := 0; retryCount < options.maxRetransmit; retryCount++ {
 				select {
 				case rsp := <-pendingChan:
+					logDebug(rsp, err, "send ack'd (%d retries)", retryCount)
 					return rsp, nil
 				case <-time.After(timeout):
 					//retransmit
+					logDebug(msg, err, "send ack timeout (%d/%d retries)", retryCount, options.maxRetransmit)
 					if strings.HasPrefix(addr, "proxy:") {
 						err = proxyRecv(addr, data)
 					} else if peer != nil {
@@ -147,11 +163,13 @@ func (s *Server) send(addr string, msg *Message, options *SendOptions) (*Message
 					} else {
 						err = errors.New("coap: no valid listener")
 					}
+					logDebug(msg, err, "sent message")
 					if err != nil {
 						return nil, err
 					}
 				}
 			}
+			logDebug(msg, err, "send ack timeout (%d retries)", options.maxRetransmit)
 			return nil, ErrTimeout
 		}
 	} else {

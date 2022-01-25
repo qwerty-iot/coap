@@ -47,7 +47,7 @@ func NewMessage() *Message {
 	return &Message{}
 }
 
-func (m Message) getBlock1() *BlockMetadata {
+func (m Message) GetBlock1() *BlockMetadata {
 	if oi := m.Option(OptBlock1); oi != nil {
 		bm, _ := blockDecode(oi)
 		return bm
@@ -55,7 +55,7 @@ func (m Message) getBlock1() *BlockMetadata {
 	return nil
 }
 
-func (m Message) getBlock2() *BlockMetadata {
+func (m Message) GetBlock2() *BlockMetadata {
 	if oi := m.Option(OptBlock2); oi != nil {
 		bm, _ := blockDecode(oi)
 		return bm

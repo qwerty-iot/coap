@@ -4,8 +4,18 @@
 
 package coap
 
-func (s *Server) handleMessage(req *Message) *Message {
-	var rsp *Message
+import "time"
+
+func (s *Server) handleMessage(req *Message) (rsp *Message) {
+
+	logDebug(req, nil, "received message")
+	defer func() {
+		if rsp != nil {
+			rsp.Meta = req.Meta
+			rsp.Meta.ReceivedAt = time.Now().UTC()
+			logDebug(rsp, nil, "sent reply")
+		}
+	}()
 
 	var dedup *dedupEntry
 	if req.Type == TypeConfirmable {
@@ -13,19 +23,22 @@ func (s *Server) handleMessage(req *Message) *Message {
 		dedup, ok = s.deduplicate(req)
 		if !ok {
 			if dedup.pending {
-				return nil
+				logDebug(req, nil, "duplicate message, ignoring waiting on response")
+				return
 			}
-			return dedup.rsp
+			logDebug(req, nil, "duplicate message, cached response returned")
+			rsp = dedup.rsp
+			return
 		}
 	}
-	block1 := req.getBlock1()
+	block1 := req.GetBlock1()
 	if block1 != nil && req.Type != TypeAcknowledgement {
 		if block1.Num == 0 {
 			// init waiter
 			rsp = req.MakeReply(RspCodeContinue, nil)
 			rsp.WithBlock1(block1)
 			s.blockCachePut(req, "")
-			return rsp
+			return
 		} else if !block1.More {
 			// reassemble data
 			var err error
@@ -33,7 +46,7 @@ func (s *Server) handleMessage(req *Message) *Message {
 			if err != nil {
 				logError(req, err, "coap: error retrieving block1 cache")
 				rsp = req.MakeReply(RspCodeInternalServerError, nil)
-				return rsp
+				return
 			}
 			req.Payload = trsp.Payload
 		} else {
@@ -42,11 +55,11 @@ func (s *Server) handleMessage(req *Message) *Message {
 			if err != nil {
 				logError(req, err, "coap: error appending block1 cache")
 				rsp = req.MakeReply(RspCodeInternalServerError, nil)
-				return rsp
+				return
 			}
 			rsp = req.MakeReply(RspCodeContinue, nil)
 			rsp.WithBlock1(block1)
-			return rsp
+			return
 		}
 	}
 
@@ -56,10 +69,10 @@ func (s *Server) handleMessage(req *Message) *Message {
 			//note, we won't send a reset on a bad notify in this case
 			s.handleNotify(req)
 		}
-		return nil
+		return
 	}
 
-	block2 := req.getBlock2()
+	block2 := req.GetBlock2()
 
 	if block2 == nil || block2.Num == 0 && req.Type == TypeConfirmable || req.Type != TypeConfirmable {
 		switch req.Type {
@@ -100,7 +113,7 @@ func (s *Server) handleMessage(req *Message) *Message {
 				if err != nil {
 					logError(req, err, "coap: error getting first block2")
 					rsp = req.MakeReply(RspCodeInternalServerError, nil)
-					return rsp
+					return
 				}
 			}
 		}
@@ -111,12 +124,12 @@ func (s *Server) handleMessage(req *Message) *Message {
 		if err != nil {
 			logError(req, err, "coap: error getting block2 response")
 			rsp = req.MakeReply(RspCodeInternalServerError, nil)
-			return rsp
+			return
 		}
 	}
 
 	if dedup != nil {
 		dedup.save(rsp)
 	}
-	return rsp
+	return
 }
