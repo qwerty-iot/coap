@@ -31,6 +31,20 @@ func nstartInc(addr string, nStart int) {
 	}
 }
 
+func nstartCount(addr string, nStart int) int {
+	nstartMux.Lock()
+	if s, found := nstartMap[addr]; found {
+		nstartMux.Unlock()
+		if s.count > nStart {
+			return s.count - nStart
+		} else {
+			return 0
+		}
+	}
+	nstartMux.Unlock()
+	return -1
+}
+
 func nstartDec(addr string) {
 	nstartMux.Lock()
 	if s, found := nstartMap[addr]; found {
