@@ -26,6 +26,8 @@ github.com/qwerty-iot/dtls/v2 v2.5.8 h1:YBwocaY4W2RsCRxj/gg3efj3bCrl/cUl665vqPFz
 github.com/qwerty-iot/dtls/v2 v2.5.8/go.mod h1:/MEdWlH8mxAvAtTPea9Y0+3uB9LvDfN6vTsImACqhSM=
 github.com/qwerty-iot/dtls/v2 v2.5.9 h1:BHNXg7lz7VCdVsCSJyZbsFgFMfQZl6QOQ+emwF+Ls5I=
 github.com/qwerty-iot/dtls/v2 v2.5.9/go.mod h1:/MEdWlH8mxAvAtTPea9Y0+3uB9LvDfN6vTsImACqhSM=
+github.com/qwerty-iot/dtls/v2 v2.5.10 h1:vDmuT3uGoc8CCrXhD2geCw4bBw4/W89oq6c6wgLclHQ=
+github.com/qwerty-iot/dtls/v2 v2.5.10/go.mod h1:/MEdWlH8mxAvAtTPea9Y0+3uB9LvDfN6vTsImACqhSM=
 github.com/qwerty-iot/tox v1.0.9 h1:mFKxh0sYfTxR7wA0W0L5Vuk+fx83vJsA7YUrwmV1P/I=
 github.com/qwerty-iot/tox v1.0.9/go.mod h1:ZPM0dCX2XqO7XO35V2aaS08niUZRaK8pRoc4z7zcmDY=
 github.com/qwerty-iot/tox v1.0.11 h1:A30ngrwJ1aLq40N1So8cmmy6rVC5krmMN1paLswE5Qo=
