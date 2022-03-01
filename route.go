@@ -17,10 +17,18 @@ type routeEntry struct {
 }
 
 func (s *Server) AddRoute(path string, callback RouteCallback) {
+
+	if path == "/" {
+		routeMap := s.routes
+		routeMap["*"] = &routeEntry{children: map[string]*routeEntry{}, callback: callback}
+		return
+	}
+
 	pathParts := strings.Split(path, "/")
 	var route *routeEntry
 	var found bool
 	routeMap := s.routes
+
 	for idx, part := range pathParts {
 		if len(part) == 0 {
 			continue

@@ -6,5 +6,5 @@ go 1.17
 
 require (
 	github.com/qwerty-iot/dtls/v2 v2.5.11
-	github.com/qwerty-iot/tox v1.0.11
+	github.com/qwerty-iot/tox v1.0.12
 )

@@ -4,7 +4,12 @@
 
 package coap
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+
+	"github.com/qwerty-iot/tox"
+)
 
 // COAPType represents the message type.
 type COAPType uint8
@@ -121,8 +126,22 @@ func init() {
 	}
 }
 
+func ToCOAPCode(val string) COAPCode {
+	ss := strings.Split(val, ".")
+	if len(ss) != 2 {
+		return RspCodeInternalServerError
+	}
+	return COAPCode(tox.ToInt(ss[0])<<5 | tox.ToInt(ss[1])&0x1F)
+}
+
 func (c COAPCode) String() string {
 	return codeNames[c]
+}
+
+func (c COAPCode) NumberString() string {
+	lower := c & 0x1F
+	upper := c >> 5
+	return fmt.Sprintf("%d.%02d", upper, lower)
 }
 
 // MediaType specifies the content type of a message.

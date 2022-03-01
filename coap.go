@@ -36,6 +36,8 @@ type Config struct {
 	BlockDefaultSize        int
 	BlockInactivityTimeout  time.Duration
 	NStart                  int
+	Name                    string
+	Ref                     interface{}
 }
 
 func NewServer(conf *Config, udpAddr string, dtlsListener *dtls.Listener) (*Server, error) {
@@ -84,11 +86,30 @@ func NewServer(conf *Config, udpAddr string, dtlsListener *dtls.Listener) (*Serv
 		if conf.NStart > 0 {
 			h.config.NStart = conf.NStart
 		}
+		h.config.Ref = conf.Ref
+		h.config.Name = conf.Name
 	}
 
 	go h.dedupWatcher()
 	go h.expireBlocks()
 	return h, nil
+}
+
+func (s *Server) GetRef() interface{} {
+	if s.config != nil {
+		return s.config.Ref
+	} else {
+		return nil
+	}
+}
+
+func (s *Server) Close() {
+	if s.udpListener != nil {
+		s.udpListener.Close()
+	}
+	if s.dtlsListener != nil {
+		s.dtlsListener.Close()
+	}
 }
 
 func randomString(length int) string {

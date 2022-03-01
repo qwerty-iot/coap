@@ -22,6 +22,7 @@ type Metadata struct {
 	DtlsCertificate *x509.Certificate
 	ReceivedAt      time.Time
 	BlockSize       int
+	Server          *Server
 }
 
 // Message is a CoAP message.
@@ -94,6 +95,27 @@ func (m Message) PacketSize() int {
 	} else {
 		return m.headerSize() + len(m.Payload)
 	}
+}
+
+func (m Message) OptionsMap() map[string]interface{} {
+	ret := map[string]interface{}{}
+	for _, v := range m.opts {
+		def := optionDefs[v.ID]
+		if ro, found := ret[def.name]; found {
+			if ra, oka := ro.([]interface{}); oka {
+				ra = append(ra, v.Value)
+			} else {
+				ra = []interface{}{ro, v.Value}
+				ret[def.name] = ra
+			}
+		} else {
+			ret[def.name] = v.Value
+		}
+	}
+	if len(ret) == 0 {
+		return nil
+	}
+	return ret
 }
 
 // Options gets all the values for the given option.

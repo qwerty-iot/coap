@@ -11,9 +11,10 @@ import (
 )
 
 type DtlsListener struct {
-	name    string
-	socket  *dtls.Listener
-	handler *Server
+	name     string
+	socket   *dtls.Listener
+	handler  *Server
+	shutdown bool
 }
 
 func (l *DtlsListener) listen(name string, listener *dtls.Listener, handler *Server) error {
@@ -27,6 +28,10 @@ func (l *DtlsListener) listen(name string, listener *dtls.Listener, handler *Ser
 func (l *DtlsListener) reader() {
 
 	rawReq, peer := l.socket.Read()
+	if l.shutdown {
+		logDebug(nil, nil, "coap: port is shutdown")
+		return
+	}
 
 	//launch new reader
 	go l.reader()
@@ -42,6 +47,7 @@ func (l *DtlsListener) reader() {
 	req.Meta.DtlsCertificate = peer.SessionCertificate()
 	req.Meta.ListenerName = l.name
 	req.Meta.ReceivedAt = time.Now().UTC()
+	req.Meta.Server = l.handler
 
 	rsp := l.handler.handleMessage(&req)
 
@@ -69,4 +75,10 @@ func (l *DtlsListener) FindPeer(addr string) *dtls.Peer {
 	}
 	peer, _ := l.socket.FindPeer(addr)
 	return peer
+}
+
+func (l *DtlsListener) Close() {
+	l.shutdown = true
+	_ = l.socket.Shutdown()
+
 }

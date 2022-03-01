@@ -74,31 +74,32 @@ const (
 )
 
 type optionDef struct {
+	name        string
 	valueFormat valueFormat
 	minLen      int
 	maxLen      int
 }
 
 var optionDefs = [256]optionDef{
-	OptIfMatch:       {valueFormat: valueOpaque, minLen: 0, maxLen: 8},
-	OptURIHost:       {valueFormat: valueString, minLen: 1, maxLen: 255},
-	OptETag:          {valueFormat: valueOpaque, minLen: 1, maxLen: 8},
-	OptIfNoneMatch:   {valueFormat: valueEmpty, minLen: 0, maxLen: 0},
-	OptObserve:       {valueFormat: valueUint, minLen: 0, maxLen: 3},
-	OptURIPort:       {valueFormat: valueUint, minLen: 0, maxLen: 2},
-	OptLocationPath:  {valueFormat: valueString, minLen: 0, maxLen: 255},
-	OptURIPath:       {valueFormat: valueString, minLen: 0, maxLen: 255},
-	OptContentFormat: {valueFormat: valueUint, minLen: 0, maxLen: 2},
-	OptMaxAge:        {valueFormat: valueUint, minLen: 0, maxLen: 4},
-	OptURIQuery:      {valueFormat: valueString, minLen: 0, maxLen: 255},
-	OptAccept:        {valueFormat: valueUint, minLen: 0, maxLen: 2},
-	OptLocationQuery: {valueFormat: valueString, minLen: 0, maxLen: 255},
-	OptProxyURI:      {valueFormat: valueString, minLen: 1, maxLen: 1034},
-	OptProxyScheme:   {valueFormat: valueString, minLen: 1, maxLen: 255},
-	OptSize1:         {valueFormat: valueUint, minLen: 0, maxLen: 4},
-	OptSize2:         {valueFormat: valueUint, minLen: 0, maxLen: 4},
-	OptBlock2:        {valueFormat: valueOpaque, minLen: 0, maxLen: 3},
-	OptBlock1:        {valueFormat: valueOpaque, minLen: 0, maxLen: 3},
+	OptIfMatch:       {name: "if-match", valueFormat: valueOpaque, minLen: 0, maxLen: 8},
+	OptURIHost:       {name: "uri-host", valueFormat: valueString, minLen: 1, maxLen: 255},
+	OptETag:          {name: "etag", valueFormat: valueOpaque, minLen: 1, maxLen: 8},
+	OptIfNoneMatch:   {name: "if-none-match", valueFormat: valueEmpty, minLen: 0, maxLen: 0},
+	OptObserve:       {name: "observe", valueFormat: valueUint, minLen: 0, maxLen: 3},
+	OptURIPort:       {name: "uri-port", valueFormat: valueUint, minLen: 0, maxLen: 2},
+	OptLocationPath:  {name: "location-path", valueFormat: valueString, minLen: 0, maxLen: 255},
+	OptURIPath:       {name: "uri-path", valueFormat: valueString, minLen: 0, maxLen: 255},
+	OptContentFormat: {name: "content-format", valueFormat: valueUint, minLen: 0, maxLen: 2},
+	OptMaxAge:        {name: "max-age", valueFormat: valueUint, minLen: 0, maxLen: 4},
+	OptURIQuery:      {name: "uri-query", valueFormat: valueString, minLen: 0, maxLen: 255},
+	OptAccept:        {name: "uri-accept", valueFormat: valueUint, minLen: 0, maxLen: 2},
+	OptLocationQuery: {name: "location-query", valueFormat: valueString, minLen: 0, maxLen: 255},
+	OptProxyURI:      {name: "proxy-uri", valueFormat: valueString, minLen: 1, maxLen: 1034},
+	OptProxyScheme:   {name: "proxy-scheme", valueFormat: valueString, minLen: 1, maxLen: 255},
+	OptSize1:         {name: "size1", valueFormat: valueUint, minLen: 0, maxLen: 4},
+	OptSize2:         {name: "size2", valueFormat: valueUint, minLen: 0, maxLen: 4},
+	OptBlock1:        {name: "block1", valueFormat: valueOpaque, minLen: 0, maxLen: 3},
+	OptBlock2:        {name: "block2", valueFormat: valueOpaque, minLen: 0, maxLen: 3},
 }
 
 type option struct {

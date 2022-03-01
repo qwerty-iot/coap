@@ -5,14 +5,16 @@
 package coap
 
 import (
+	"errors"
 	"net"
 	"time"
 )
 
 type UdpListener struct {
-	name    string
-	socket  *net.UDPConn
-	handler *Server
+	name     string
+	socket   *net.UDPConn
+	handler  *Server
+	shutdown bool
 }
 
 func (l *UdpListener) listen(name string, addr string, handler *Server) error {
@@ -40,6 +42,10 @@ func (l *UdpListener) reader() {
 	for {
 		rawLen, from, err := l.socket.ReadFromUDP(rawReq)
 		if err != nil {
+			if l.shutdown {
+				logDebug(nil, nil, "coap: reader shutdown")
+				return
+			}
 			logWarn(nil, err, "coap: error reading COAP packet")
 			go l.reader()
 			return
@@ -59,6 +65,7 @@ func (l *UdpListener) handle(rawReq []byte, from *net.UDPAddr) {
 	req.Meta.RemoteAddr = from.String()
 	req.Meta.ListenerName = l.name
 	req.Meta.ReceivedAt = time.Now().UTC()
+	req.Meta.Server = l.handler
 
 	rsp := l.handler.handleMessage(&req)
 
@@ -81,6 +88,9 @@ func (l *UdpListener) handle(rawReq []byte, from *net.UDPAddr) {
 }
 
 func (l *UdpListener) Send(addr string, data []byte) error {
+	if l.shutdown {
+		return errors.New("coap: port is shutdown")
+	}
 	uaddr, err := net.ResolveUDPAddr("udp", addr)
 	if err != nil {
 		return err
@@ -90,4 +100,9 @@ func (l *UdpListener) Send(addr string, data []byte) error {
 		return err
 	}
 	return nil
+}
+
+func (l *UdpListener) Close() {
+	l.shutdown = true
+	_ = l.socket.Close()
 }

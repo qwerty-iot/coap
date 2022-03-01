@@ -83,7 +83,14 @@ func (s *Server) handleMessage(req *Message) (rsp *Message) {
 				rsp = s.handleConfirmable(req)
 			}
 		case TypeNonConfirmable:
-			rsp = s.handleNotify(req)
+			if !req.IsRequest() {
+				rsp = s.handleNotify(req)
+			} else {
+				rsp = s.handleConfirmable(req)
+				if rsp.Type == TypeAcknowledgement {
+					rsp.Type = TypeNonConfirmable
+				}
+			}
 		default:
 			rsp = &Message{
 				Type:      TypeReset,
