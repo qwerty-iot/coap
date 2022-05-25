@@ -5,6 +5,8 @@ github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZb
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/qwerty-iot/dtls/v2 v2.6.0 h1:YakquMkjLqZiKyEkCOXUMqxdc3VIk2oG1G/9UJOSsRM=
 github.com/qwerty-iot/dtls/v2 v2.6.0/go.mod h1:/MEdWlH8mxAvAtTPea9Y0+3uB9LvDfN6vTsImACqhSM=
+github.com/qwerty-iot/dtls/v2 v2.6.1 h1:mytEYSIWPxiz95wPBz3t55v8Oe8LAaSEarkG2zizG0s=
+github.com/qwerty-iot/dtls/v2 v2.6.1/go.mod h1:/MEdWlH8mxAvAtTPea9Y0+3uB9LvDfN6vTsImACqhSM=
 github.com/qwerty-iot/tox v1.0.13 h1:XGj6e9Sg19sRkB8jr+wbkNZYFc36zAmuqo3FGkHERNA=
 github.com/qwerty-iot/tox v1.0.13/go.mod h1:ZPM0dCX2XqO7XO35V2aaS08niUZRaK8pRoc4z7zcmDY=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
