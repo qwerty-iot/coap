@@ -13,6 +13,7 @@ var (
 	ErrUnauthorized          = errors.New("coap: not authorized")
 	ErrMethodNotAllowed      = errors.New("coap: method not allowed")
 	ErrEncodingNotAcceptable = errors.New("coap: encoding not acceptable")
+	ErrInternalServerError   = errors.New("coap: internal server error")
 	ErrInvalidTokenLen       = errors.New("coap: invalid token length")
 	ErrOptionTooLong         = errors.New("coap: option is too long")
 	ErrOptionGapTooLarge     = errors.New("coap: option gap too large")
@@ -33,6 +34,8 @@ func RspCodeToError(code COAPCode) error {
 		return ErrMethodNotAllowed
 	case RspCodeNotAcceptable:
 		return ErrEncodingNotAcceptable
+	case RspCodeInternalServerError:
+		return ErrInternalServerError
 	default:
 		return errors.New("coap: other error " + code.String())
 	}
