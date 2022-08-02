@@ -27,6 +27,8 @@ type Server struct {
 	pendingMsgId uint16
 
 	blockCache sync.Map
+
+	lastActivity time.Time
 }
 
 type Config struct {
@@ -110,6 +112,10 @@ func (s *Server) Close() {
 	if s.dtlsListener != nil {
 		s.dtlsListener.Close()
 	}
+}
+
+func (s *Server) LastActivity() time.Time {
+	return s.lastActivity
 }
 
 func randomString(length int) string {

@@ -8,11 +8,14 @@ import "time"
 
 func (s *Server) handleMessage(req *Message) (rsp *Message) {
 
+	now := time.Now().UTC()
+	s.lastActivity = now
+
 	logDebug(req, nil, "received message")
 	defer func() {
 		if rsp != nil {
 			rsp.Meta = req.Meta
-			rsp.Meta.ReceivedAt = time.Now().UTC()
+			rsp.Meta.ReceivedAt = now
 			logDebug(rsp, nil, "sent reply")
 		}
 	}()
