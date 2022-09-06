@@ -4,7 +4,9 @@
 
 package coap
 
-import "time"
+import (
+	"time"
+)
 
 func (s *Server) handleMessage(req *Message) (rsp *Message) {
 
@@ -78,6 +80,9 @@ func (s *Server) handleMessage(req *Message) (rsp *Message) {
 	block2 := req.GetBlock2()
 
 	if block2 == nil || block2.Num == 0 && req.Type == TypeConfirmable || req.Type != TypeConfirmable {
+		if block2 != nil {
+			req.Meta.BlockSize = block2.Size
+		}
 		switch req.Type {
 		case TypeConfirmable:
 			if req.Option(OptObserve) != nil && !req.IsRequest() {

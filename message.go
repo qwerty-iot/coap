@@ -340,5 +340,6 @@ func (m *Message) MakeReply(code COAPCode, payload []byte) *Message {
 	rm.Type = TypeAcknowledgement
 	rm.Payload = payload
 	rm.Code = code
+	rm.Meta.BlockSize = m.Meta.BlockSize
 	return &rm
 }
