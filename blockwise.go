@@ -99,7 +99,7 @@ func (bm *BlockMetadata) Encode() []byte {
 		//1 byte
 		buf = make([]byte, 1)
 		buf[0] = byte((bm.Num << 4) & 0xFF)
-	} else if bm.Num <= 4096 {
+	} else if bm.Num < 4096 {
 		//2 bytes
 		buf = make([]byte, 2)
 		buf[1] = byte((bm.Num << 4) & 0xFF)
