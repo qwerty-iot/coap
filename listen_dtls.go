@@ -77,6 +77,14 @@ func (l *DtlsListener) FindPeer(addr string) *dtls.Peer {
 	return peer
 }
 
+func (l *DtlsListener) ClosePeer(addr string) {
+	if l == nil {
+		return
+	}
+	l.socket.RemovePeerByAddr(addr, dtls.AlertDesc_Noop)
+	return
+}
+
 func (l *DtlsListener) Close() {
 	l.shutdown = true
 	_ = l.socket.Shutdown()

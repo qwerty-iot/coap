@@ -22,6 +22,10 @@ func (s *Server) handleMessage(req *Message) (rsp *Message) {
 		}
 	}()
 
+	if s.dtlsListener != nil && req.Meta.ListenerName != s.dtlsListener.name {
+		s.dtlsListener.ClosePeer(req.Meta.RemoteAddr)
+	}
+
 	var dedup *dedupEntry
 	if req.Type == TypeConfirmable {
 		var ok bool
