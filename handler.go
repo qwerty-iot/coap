@@ -74,16 +74,32 @@ func (s *Server) handleMessage(req *Message) (rsp *Message) {
 
 	if req.Type == TypeAcknowledgement {
 		found := s.handleAcknowledgement(req)
-		if !found {
-			//note, we won't send a reset on a bad notify in this case
-			s.handleNotify(req)
+		if found {
+			return
 		}
-		return
 	}
 
 	block2 := req.GetBlock2()
-
-	if block2 == nil || block2.Num == 0 && req.Type == TypeConfirmable || req.Type != TypeConfirmable {
+	if block2 != nil && block2.More && block2.Num == 0 {
+		// special case for notifications from observes that require blockwise
+		rsp = req.MakeReply(CodeEmpty, nil)
+		rsp.Token = nil
+		s.send(req.Meta.RemoteAddr, rsp, s.NewOptions())
+		rsp = nil
+		// force query
+		var err error
+		req, err = s.blockRetreive(req)
+		if err != nil {
+			rsp = &Message{
+				Type:      TypeReset,
+				Code:      req.Code,
+				MessageID: req.MessageID,
+				Token:     req.Token,
+			}
+		}
+		block2.More = false
+	}
+	if block2 == nil || !block2.More || req.Type != TypeConfirmable {
 		if block2 != nil {
 			req.Meta.BlockSize = block2.Size
 		}
@@ -103,6 +119,8 @@ func (s *Server) handleMessage(req *Message) (rsp *Message) {
 					rsp.Type = TypeNonConfirmable
 				}
 			}
+		case TypeAcknowledgement:
+			rsp = s.handleNotify(req)
 		default:
 			rsp = &Message{
 				Type:      TypeReset,

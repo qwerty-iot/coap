@@ -14,6 +14,7 @@ type ObserveCallback func(req *Message, arg interface{}) error
 type ObserveNotFoundCallback func(req *Message) bool
 
 type Observation struct {
+	path     string
 	callback ObserveCallback
 	arg      interface{}
 }
@@ -46,7 +47,7 @@ func (s *Server) Observe(addr string, code COAPCode, path string, payload []byte
 		return "", err
 	}
 
-	observeMap.Store(string(req.Token), &Observation{callback: callback, arg: arg})
+	observeMap.Store(string(req.Token), &Observation{path: path, callback: callback, arg: arg})
 
 	_ = callback(rsp, arg)
 

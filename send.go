@@ -180,3 +180,42 @@ func (s *Server) send(addr string, msg *Message, options *SendOptions) (*Message
 		return nil, nil
 	}
 }
+
+func (s *Server) blockRetreive(req *Message) (*Message, error) {
+
+	obs := s.getObserve(req)
+	if obs == nil {
+		return nil, errors.New("expected observation to exist")
+	}
+
+	block2 := req.GetBlock2()
+	if block2 == nil {
+		return nil, errors.New("expected block2 in request")
+	}
+
+	//blockwise requests
+	var data []byte
+	data = append(data, req.Payload...)
+
+	block := 1
+	for {
+		msg := NewMessage().WithPathString(obs.path).WithType(TypeConfirmable).WithCode(CodeGet)
+		bm := blockInit(block, false, block2.Size)
+		msg.WithBlock2(bm)
+		if af := req.Accept(); af != None {
+			msg.WithContentFormat(af)
+		}
+		rsp, err := s.send(req.Meta.RemoteAddr, msg, s.NewOptions())
+		if err != nil {
+			return nil, err
+		}
+		data = append(data, rsp.Payload...)
+		block++
+		block2 = rsp.GetBlock2()
+		if !block2.More {
+			break
+		}
+	}
+	req.Payload = data
+	return req, nil
+}
