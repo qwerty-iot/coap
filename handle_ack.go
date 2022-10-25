@@ -31,6 +31,11 @@ func (s *Server) handleAcknowledgement(req *Message) bool {
 	s.pendingMux.Unlock()
 
 	if found {
+		if req.Code == CodeEmpty {
+			// delayed response
+			logDebug(req, nil, "ack with delayed response")
+			return true
+		}
 		select {
 		case pe.c <- req:
 			//logDebug(req, nil, "ack found (removed from pending list)")

@@ -121,8 +121,15 @@ func (s *Server) handleMessage(req *Message) (rsp *Message) {
 	}
 	switch req.Type {
 	case TypeConfirmable:
-		if req.Option(OptObserve) != nil && !req.IsRequest() {
-			rsp = s.handleNotify(req)
+		if !req.IsRequest() {
+			if req.Option(OptObserve) != nil {
+				rsp = s.handleNotify(req)
+			} else {
+				if s.handleAcknowledgement(req) {
+					rsp = req.MakeReply(CodeEmpty, nil)
+					rsp.Token = nil
+				}
+			}
 		} else {
 			rsp = s.handleConfirmable(req)
 		}

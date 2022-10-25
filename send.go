@@ -202,7 +202,7 @@ func (s *Server) blockRetreive(req *Message) (*Message, error) {
 	var data []byte
 	data = append(data, req.Payload...)
 
-	//logDebug(req, nil, "retrieving additional blocks starting")
+	logDebug(req, nil, "retrieving additional blocks starting")
 
 	block := 1
 	code := CodeGet
@@ -223,12 +223,12 @@ func (s *Server) blockRetreive(req *Message) (*Message, error) {
 		data = append(data, rsp.Payload...)
 		block++
 		block2 = rsp.GetBlock2()
-		if !block2.More {
+		if block2 == nil || !block2.More {
 			break
 		}
 	}
 	req.Payload = data
 	req.Type = TypeAcknowledgement
-	//logDebug(req, nil, "retrieving additional blocks done")
+	logDebug(req, nil, "retrieving additional blocks done")
 	return req, nil
 }
