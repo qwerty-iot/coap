@@ -62,60 +62,63 @@ const (
 
 // Response Codes
 const (
-	RspCodeCreated               COAPCode = 65
-	RspCodeDeleted               COAPCode = 66
-	RspCodeValid                 COAPCode = 67
-	RspCodeChanged               COAPCode = 68
-	RspCodeContent               COAPCode = 69
-	RspCodeContinue              COAPCode = 95
-	RspCodeBadRequest            COAPCode = 128
-	RspCodeUnauthorized          COAPCode = 129
-	RspCodeBadOption             COAPCode = 130
-	RspCodeForbidden             COAPCode = 131
-	RspCodeNotFound              COAPCode = 132
-	RspCodeMethodNotAllowed      COAPCode = 133
-	RspCodeNotAcceptable         COAPCode = 134
-	RspCodePreconditionFailed    COAPCode = 140
-	RspCodeRequestEntityTooLarge COAPCode = 141
-	RspCodeUnsupportedMediaType  COAPCode = 143
-	RspCodeInternalServerError   COAPCode = 160
-	RspCodeNotImplemented        COAPCode = 161
-	RspCodeBadGateway            COAPCode = 162
-	RspCodeServiceUnavailable    COAPCode = 163
-	RspCodeGatewayTimeout        COAPCode = 164
-	RspCodeProxyingNotSupported  COAPCode = 165
+	RspCodeCreated                 COAPCode = 65
+	RspCodeDeleted                 COAPCode = 66
+	RspCodeValid                   COAPCode = 67
+	RspCodeChanged                 COAPCode = 68
+	RspCodeContent                 COAPCode = 69
+	RspCodeContinue                COAPCode = 95
+	RspCodeBadRequest              COAPCode = 128
+	RspCodeUnauthorized            COAPCode = 129
+	RspCodeBadOption               COAPCode = 130
+	RspCodeForbidden               COAPCode = 131
+	RspCodeNotFound                COAPCode = 132
+	RspCodeMethodNotAllowed        COAPCode = 133
+	RspCodeNotAcceptable           COAPCode = 134
+	RspCodeRequestEntityIncomplete COAPCode = 136
+	RspCodePreconditionFailed      COAPCode = 140
+	RspCodeRequestEntityTooLarge   COAPCode = 141
+	RspCodeUnsupportedMediaType    COAPCode = 143
+	RspCodeInternalServerError     COAPCode = 160
+	RspCodeNotImplemented          COAPCode = 161
+	RspCodeBadGateway              COAPCode = 162
+	RspCodeServiceUnavailable      COAPCode = 163
+	RspCodeGatewayTimeout          COAPCode = 164
+	RspCodeProxyingNotSupported    COAPCode = 165
 )
 
 var codeNames = [256]string{
-	CodeGet:                      "GET",
-	CodePost:                     "POST",
-	CodePut:                      "PUT",
-	CodeDelete:                   "DELETE",
-	CodeFetch:                    "FETCH",
-	CodePatch:                    "PATCH",
-	CodeIPatch:                   "iPATCH",
-	RspCodeCreated:               "Created",
-	RspCodeDeleted:               "Deleted",
-	RspCodeValid:                 "Valid",
-	RspCodeChanged:               "Changed",
-	RspCodeContent:               "Content",
-	RspCodeContinue:              "Continue",
-	RspCodeBadRequest:            "BadRequest",
-	RspCodeUnauthorized:          "Unauthorized",
-	RspCodeBadOption:             "BadOption",
-	RspCodeForbidden:             "Forbidden",
-	RspCodeNotFound:              "NotFound",
-	RspCodeMethodNotAllowed:      "MethodNotAllowed",
-	RspCodeNotAcceptable:         "NotAcceptable",
-	RspCodePreconditionFailed:    "PreconditionFailed",
-	RspCodeRequestEntityTooLarge: "RequestEntityTooLarge",
-	RspCodeUnsupportedMediaType:  "UnsupportedMediaType",
-	RspCodeInternalServerError:   "InternalServerError",
-	RspCodeNotImplemented:        "NotImplemented",
-	RspCodeBadGateway:            "BadGateway",
-	RspCodeServiceUnavailable:    "ServiceUnavailable",
-	RspCodeGatewayTimeout:        "GatewayTimeout",
-	RspCodeProxyingNotSupported:  "ProxyingNotSupported",
+	CodeEmpty:                      "EMPTY",
+	CodeGet:                        "GET",
+	CodePost:                       "POST",
+	CodePut:                        "PUT",
+	CodeDelete:                     "DELETE",
+	CodeFetch:                      "FETCH",
+	CodePatch:                      "PATCH",
+	CodeIPatch:                     "iPATCH",
+	RspCodeCreated:                 "Created",
+	RspCodeDeleted:                 "Deleted",
+	RspCodeValid:                   "Valid",
+	RspCodeChanged:                 "Changed",
+	RspCodeContent:                 "Content",
+	RspCodeContinue:                "Continue",
+	RspCodeBadRequest:              "BadRequest",
+	RspCodeUnauthorized:            "Unauthorized",
+	RspCodeBadOption:               "BadOption",
+	RspCodeForbidden:               "Forbidden",
+	RspCodeNotFound:                "NotFound",
+	RspCodeMethodNotAllowed:        "MethodNotAllowed",
+	RspCodeNotAcceptable:           "NotAcceptable",
+	RspCodeRequestEntityIncomplete: "RequestEntityIncomplete",
+	RspCodePreconditionFailed:      "PreconditionFailed",
+	RspCodeRequestEntityTooLarge:   "RequestEntityTooLarge",
+	RspCodeUnsupportedMediaType:    "UnsupportedMediaType",
+	RspCodeInternalServerError:     "InternalServerError",
+	RspCodeNotImplemented:          "NotImplemented",
+	RspCodeBadGateway:              "BadGateway",
+	RspCodeServiceUnavailable:      "ServiceUnavailable",
+	RspCodeGatewayTimeout:          "GatewayTimeout",
+	RspCodeProxyingNotSupported:    "ProxyingNotSupported",
 }
 
 func init() {
