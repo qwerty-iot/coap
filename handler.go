@@ -80,88 +80,94 @@ func (s *Server) handleMessage(req *Message) (rsp *Message) {
 	}
 
 	block2 := req.GetBlock2()
-	if block2 != nil && block2.More && block2.Num == 0 {
-		// special case for notifications from observes that require blockwise
-		rsp = req.MakeReply(CodeEmpty, nil)
-		rsp.Token = nil
-		s.send(req.Meta.RemoteAddr, rsp, s.NewOptions())
-		rsp = nil
-		// force query
-		var err error
-		req, err = s.blockRetreive(req)
-		if err != nil {
-			rsp = &Message{
-				Type:      TypeReset,
-				Code:      req.Code,
-				MessageID: req.MessageID,
-				Token:     req.Token,
-			}
-		}
-		block2.More = false
-	}
-	if block2 == nil || !block2.More || req.Type != TypeConfirmable {
-		if block2 != nil {
-			req.Meta.BlockSize = block2.Size
-		}
-		switch req.Type {
-		case TypeConfirmable:
-			if req.Option(OptObserve) != nil && !req.IsRequest() {
-				rsp = s.handleNotify(req)
+	if block2 != nil {
+		if req.IsRequest() {
+			if block2.Num == 0 {
+				// fallthrough to main handler
 			} else {
-				rsp = s.handleConfirmable(req)
-			}
-		case TypeNonConfirmable:
-			if !req.IsRequest() {
-				rsp = s.handleNotify(req)
-			} else {
-				rsp = s.handleConfirmable(req)
-				if rsp.Type == TypeAcknowledgement {
-					rsp.Type = TypeNonConfirmable
-				}
-			}
-		case TypeAcknowledgement:
-			rsp = s.handleNotify(req)
-		default:
-			rsp = &Message{
-				Type:      TypeReset,
-				Code:      req.Code,
-				MessageID: req.MessageID,
-				Token:     req.Token,
-			}
-		}
-
-		if rsp != nil {
-			if block1 != nil {
-				rsp.WithBlock1(block1)
-			}
-			if rsp.RequiresBlockwise() {
-				//need to send BLOCK2
-				bs := s.config.BlockDefaultSize
-				if rsp.Meta.BlockSize != 0 {
-					bs = rsp.Meta.BlockSize
-				}
-				block2 = blockInit(0, true, bs)
-
-				//store request in block cache
-				s.blockCachePut(rsp, req.getBlockKey())
-				//rewrite rsp to include block0
+				// we have already processed block0 so now we need to feed the rest of the blocks.
 				var err error
-				rsp, err = s.blockCacheGet(req, 0, bs)
+				rsp, err = s.blockCacheGet(req, block2.Num, block2.Size)
 				if err != nil {
-					logError(req, err, "coap: error getting first block2")
+					logError(req, err, "coap: error getting block2 response")
 					rsp = req.MakeReply(RspCodeInternalServerError, nil)
 					return
 				}
+				return
+			}
+		} else if block2.More && block2.Num == 0 {
+			// special case for notifications from observes that require blockwise
+			rsp = req.MakeReply(CodeEmpty, nil)
+			rsp.Token = nil
+			s.send(req.Meta.RemoteAddr, rsp, s.NewOptions())
+			rsp = nil
+			// force query
+			var err error
+			req, err = s.blockRetreive(req)
+			if err != nil {
+				rsp = &Message{
+					Type:      TypeReset,
+					Code:      req.Code,
+					MessageID: req.MessageID,
+					Token:     req.Token,
+				}
+			}
+			block2.More = false
+		}
+	}
+
+	if block2 != nil {
+		req.Meta.BlockSize = block2.Size
+	}
+	switch req.Type {
+	case TypeConfirmable:
+		if req.Option(OptObserve) != nil && !req.IsRequest() {
+			rsp = s.handleNotify(req)
+		} else {
+			rsp = s.handleConfirmable(req)
+		}
+	case TypeNonConfirmable:
+		if !req.IsRequest() {
+			rsp = s.handleNotify(req)
+		} else {
+			rsp = s.handleConfirmable(req)
+			if rsp.Type == TypeAcknowledgement {
+				rsp.Type = TypeNonConfirmable
 			}
 		}
-	} else {
-		// retrieve message
-		var err error
-		rsp, err = s.blockCacheGet(req, block2.Num, block2.Size)
-		if err != nil {
-			logError(req, err, "coap: error getting block2 response")
-			rsp = req.MakeReply(RspCodeInternalServerError, nil)
-			return
+	case TypeAcknowledgement:
+		rsp = s.handleNotify(req)
+	default:
+		rsp = &Message{
+			Type:      TypeReset,
+			Code:      req.Code,
+			MessageID: req.MessageID,
+			Token:     req.Token,
+		}
+	}
+
+	if rsp != nil {
+		if block1 != nil {
+			rsp.WithBlock1(block1)
+		}
+		if rsp.RequiresBlockwise() {
+			//need to send BLOCK2
+			bs := s.config.BlockDefaultSize
+			if rsp.Meta.BlockSize != 0 {
+				bs = rsp.Meta.BlockSize
+			}
+			block2 = blockInit(0, true, bs)
+
+			//store request in block cache
+			s.blockCachePut(rsp, req.getBlockKey())
+			//rewrite rsp to include block0
+			var err error
+			rsp, err = s.blockCacheGet(req, 0, bs)
+			if err != nil {
+				logError(req, err, "coap: error getting first block2")
+				rsp = req.MakeReply(RspCodeInternalServerError, nil)
+				return
+			}
 		}
 	}
 

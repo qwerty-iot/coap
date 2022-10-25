@@ -54,7 +54,12 @@ func (s *Server) Send(addr string, msg *Message, options *SendOptions) (*Message
 			if block1 == nil {
 				return nil, errors.New("expected block1 in response")
 			}
-			blockNum = block1.Num
+			if blockSize > block1.Size {
+				// size changed, need to adjust block num
+				blockNum = (blockSize/block1.Size)*(block1.Num+1) - 1
+			} else {
+				blockNum = block1.Num
+			}
 			blockSize = block1.Size
 			if !more {
 				break
@@ -197,9 +202,15 @@ func (s *Server) blockRetreive(req *Message) (*Message, error) {
 	var data []byte
 	data = append(data, req.Payload...)
 
+	//logDebug(req, nil, "retrieving additional blocks starting")
+
 	block := 1
+	code := CodeGet
+	if obs.path == "" {
+		code = CodeFetch
+	}
 	for {
-		msg := NewMessage().WithPathString(obs.path).WithType(TypeConfirmable).WithCode(CodeGet)
+		msg := NewMessage().WithPathString(obs.path).WithType(TypeConfirmable).WithCode(code)
 		bm := blockInit(block, false, block2.Size)
 		msg.WithBlock2(bm)
 		if af := req.Accept(); af != None {
@@ -217,5 +228,7 @@ func (s *Server) blockRetreive(req *Message) (*Message, error) {
 		}
 	}
 	req.Payload = data
+	req.Type = TypeAcknowledgement
+	//logDebug(req, nil, "retrieving additional blocks done")
 	return req, nil
 }

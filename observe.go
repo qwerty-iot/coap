@@ -79,8 +79,8 @@ func (s *Server) ObserveCancel(addr string, path string, token string, options *
 	return nil
 }
 
-func ObserveRegister(token string, callback ObserveCallback, arg interface{}) {
-	observeMap.Store(token, &Observation{callback: callback, arg: arg})
+func ObserveRegister(token string, path string, callback ObserveCallback, arg interface{}) {
+	observeMap.Store(token, &Observation{path: path, callback: callback, arg: arg})
 	return
 }
 
