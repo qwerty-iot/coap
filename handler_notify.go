@@ -43,7 +43,6 @@ func (s *Server) handleNotify(req *Message) *Message {
 				Type:      TypeAcknowledgement,
 				Code:      CodeEmpty,
 				MessageID: req.MessageID,
-				Token:     req.Token,
 			}
 		}
 	}

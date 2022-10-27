@@ -7,41 +7,41 @@ package coap
 import "time"
 
 type SendOptions struct {
-	maxRetransmit int
-	ackTimeout    time.Duration
-	randomFactor  float64
-	blockSize     int
-	nStart        int
+	MaxRetransmit int           `json:"MaxRetransmit"`
+	ActTimeout    time.Duration `json:"ActTimeout"`
+	RandomFactor  float64       `json:"RandomFactor"`
+	BlockSize     int           `json:"BlockSize"`
+	NStart        int           `json:"NStart"`
 }
 
 func (s *Server) NewOptions() *SendOptions {
 	return &SendOptions{
-		maxRetransmit: 3,
-		ackTimeout:    time.Second * 5,
-		randomFactor:  1.5,
-		blockSize:     s.config.BlockDefaultSize,
-		nStart:        s.config.NStart,
+		MaxRetransmit: 3,
+		ActTimeout:    time.Second * 5,
+		RandomFactor:  1.5,
+		BlockSize:     s.config.BlockDefaultSize,
+		NStart:        s.config.NStart,
 	}
 }
 
 func (so *SendOptions) WithRetry(count int, timeout time.Duration, randomFactor float64) *SendOptions {
-	so.maxRetransmit = count
-	so.ackTimeout = timeout
-	so.randomFactor = randomFactor
+	so.MaxRetransmit = count
+	so.ActTimeout = timeout
+	so.RandomFactor = randomFactor
 	return so
 }
 
 func (so *SendOptions) WithBlockSize(bs int) *SendOptions {
-	so.blockSize = bs
+	so.BlockSize = bs
 	return so
 }
 
 func (so *SendOptions) WithNStart(ns int) *SendOptions {
-	so.nStart = ns
+	so.NStart = ns
 	return so
 }
 
 func (so *SendOptions) NoRetry() *SendOptions {
-	so.maxRetransmit = -1
+	so.MaxRetransmit = -1
 	return so
 }

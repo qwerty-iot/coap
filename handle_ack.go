@@ -44,6 +44,6 @@ func (s *Server) handleAcknowledgement(req *Message) bool {
 		}
 		return true
 	}
-	logDebug(req, nil, "ack not found")
+	//logDebug(req, nil, "ack not found")
 	return false
 }

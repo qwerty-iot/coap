@@ -42,7 +42,9 @@ func (s *Server) handleMessage(req *Message) (rsp *Message) {
 	}
 	block1 := req.GetBlock1()
 	if block1 != nil && req.Type != TypeAcknowledgement {
-		if block1.Num == 0 {
+		if block1.Num == 0 && !block1.More {
+			// do nothing
+		} else if block1.Num == 0 {
 			// init waiter
 			rsp = req.MakeReply(RspCodeContinue, nil)
 			rsp.WithBlock1(block1)

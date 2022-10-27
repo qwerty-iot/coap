@@ -42,15 +42,19 @@ type Config struct {
 	Ref                     interface{}
 }
 
-func NewServer(conf *Config, udpAddr string, dtlsListener *dtls.Listener) (*Server, error) {
-	h := &Server{}
-	h.config = &Config{
+func NewConfig() *Config {
+	return &Config{
 		DeduplicateExpiration:  time.Second * 600,
 		DeduplicateInterval:    time.Second * 20,
 		BlockDefaultSize:       1024,
 		BlockInactivityTimeout: time.Second * 120,
-		NStart:                 10,
+		NStart:                 1,
 	}
+}
+
+func NewServer(conf *Config, udpAddr string, dtlsListener *dtls.Listener) (*Server, error) {
+	h := &Server{}
+	h.config = NewConfig()
 	h.routes = map[string]*routeEntry{}
 	h.pendingMap = map[string]*pendingEntry{}
 	h.pendingMsgId = uint16(time.Now().UnixNano() % 32767)

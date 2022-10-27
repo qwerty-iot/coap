@@ -23,7 +23,7 @@ func (s *Server) Send(addr string, msg *Message, options *SendOptions) (*Message
 		options = s.NewOptions()
 	}
 
-	msg.Meta.BlockSize = options.blockSize
+	msg.Meta.BlockSize = options.BlockSize
 
 	if msg.RequiresBlockwise() {
 		// chunk and send
@@ -75,7 +75,7 @@ func (s *Server) Send(addr string, msg *Message, options *SendOptions) (*Message
 
 	if rsp != nil {
 		block2 := rsp.GetBlock2()
-		if block2 != nil {
+		if block2 != nil && block2.More {
 			//blockwise requests
 			var data []byte
 			data = append(data, rsp.Payload...)
@@ -109,12 +109,17 @@ func (s *Server) send(addr string, msg *Message, options *SendOptions) (*Message
 
 	if msg.IsConfirmable() {
 		nstrt := time.Now().UTC()
-		nstartInc(addr, options.nStart)
-		if time.Now().UTC().Sub(nstrt).Seconds() > 0.5 || nstartCount(addr, options.nStart) > 0 {
-			logDebug(msg, nil, "nstart delay %.3fms (%d waiting)", time.Now().UTC().Sub(nstrt).Seconds(), nstartCount(addr, options.nStart))
+		nstartInc(addr, options.NStart)
+		if time.Now().UTC().Sub(nstrt).Seconds() > 0.5 || nstartCount(addr, options.NStart) > 0 {
+			logDebug(msg, nil, "nstart delay %.3fms (%d waiting)", time.Now().UTC().Sub(nstrt).Seconds(), nstartCount(addr, options.NStart))
 		}
 		defer nstartDec(addr)
 		pendingChan = s.pendingSave(msg)
+	} else if msg.MessageID == 0 {
+		s.pendingMux.Lock()
+		msg.MessageID = s.pendingMsgId
+		s.pendingMsgId = s.pendingMsgId + 1
+		s.pendingMux.Unlock()
 	}
 
 	data, err := msg.marshalBinary()
@@ -144,8 +149,8 @@ func (s *Server) send(addr string, msg *Message, options *SendOptions) (*Message
 	}
 
 	if msg.Type != TypeAcknowledgement && pendingChan != nil {
-		timeout := options.ackTimeout + time.Second*time.Duration(options.ackTimeout.Seconds()*((options.randomFactor-1.0)*rand.Float64()))
-		if options.maxRetransmit == -1 {
+		timeout := options.ActTimeout + time.Second*time.Duration(options.ActTimeout.Seconds()*((options.RandomFactor-1.0)*rand.Float64()))
+		if options.MaxRetransmit == -1 {
 			select {
 			case rsp := <-pendingChan:
 				logDebug(rsp, err, "send ack'd (no retries)")
@@ -155,14 +160,14 @@ func (s *Server) send(addr string, msg *Message, options *SendOptions) (*Message
 				return nil, ErrTimeout
 			}
 		} else {
-			for retryCount := 0; retryCount < options.maxRetransmit; retryCount++ {
+			for retryCount := 0; retryCount < options.MaxRetransmit; retryCount++ {
 				select {
 				case rsp := <-pendingChan:
 					logDebug(rsp, err, "send ack'd (%d retries)", retryCount)
 					return rsp, nil
 				case <-time.After(timeout):
 					//retransmit
-					logDebug(msg, err, "send ack timeout (%d/%d retries)", retryCount, options.maxRetransmit)
+					logDebug(msg, err, "send ack timeout (%d/%d retries)", retryCount, options.MaxRetransmit)
 					if strings.HasPrefix(addr, "proxy:") {
 						err = proxyRecv(addr, data)
 					} else if peer != nil {
@@ -178,7 +183,7 @@ func (s *Server) send(addr string, msg *Message, options *SendOptions) (*Message
 					}
 				}
 			}
-			logDebug(msg, err, "send ack timeout (%d retries)", options.maxRetransmit)
+			logDebug(msg, err, "send ack timeout (%d retries)", options.MaxRetransmit)
 			return nil, ErrTimeout
 		}
 	} else {
