@@ -149,7 +149,7 @@ func (s *Server) send(addr string, msg *Message, options *SendOptions) (*Message
 	}
 
 	if msg.Type != TypeAcknowledgement && pendingChan != nil {
-		timeout := options.ActTimeout + time.Second*time.Duration(options.ActTimeout.Seconds()*((options.RandomFactor-1.0)*rand.Float64()))
+		timeout := options.ActTimeout + time.Second*time.Duration(options.ActTimeout.Seconds()*((options.RandomFactor)*rand.Float64()))
 		if options.MaxRetransmit == -1 {
 			select {
 			case rsp := <-pendingChan:
