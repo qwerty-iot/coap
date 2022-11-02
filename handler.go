@@ -101,11 +101,13 @@ func (s *Server) handleMessage(req *Message) (rsp *Message) {
 			// special case for notifications from observes that require blockwise
 			rsp = req.MakeReply(CodeEmpty, nil)
 			rsp.Token = nil
-			s.send(req.Meta.RemoteAddr, rsp, s.NewOptions())
+			_, err := s.send(req.Meta.RemoteAddr, rsp, s.NewOptions())
+			if err != nil {
+				logError(req, err, "coap: error getting failed to send empty ack to start block2 transfer")
+			}
 			rsp = nil
 			// force query
-			var err error
-			req, err = s.blockRetreive(req)
+			breq, err := s.blockRetreive(req)
 			if err != nil {
 				rsp = &Message{
 					Type:      TypeReset,
@@ -113,6 +115,8 @@ func (s *Server) handleMessage(req *Message) (rsp *Message) {
 					MessageID: req.MessageID,
 					Token:     req.Token,
 				}
+			} else {
+				req = breq
 			}
 			block2.More = false
 		}
