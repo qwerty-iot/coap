@@ -149,25 +149,30 @@ func (s *Server) send(addr string, msg *Message, options *SendOptions) (*Message
 	}
 
 	if msg.Type != TypeAcknowledgement && pendingChan != nil {
-		timeout := options.ActTimeout + time.Second*time.Duration(options.ActTimeout.Seconds()*((options.RandomFactor)*rand.Float64()))
+		maxWait := time.Duration(float64(options.ActTimeout*time.Duration((2^(options.MaxRetransmit+1))-1)) * options.RandomFactor)
+		timeout := time.Duration(((float64(options.ActTimeout)*options.RandomFactor)-float64(options.ActTimeout))*rand.Float64()) + options.ActTimeout
 		if options.MaxRetransmit == -1 {
 			select {
 			case rsp := <-pendingChan:
-				logDebug(rsp, err, "send ack'd (no retries)")
+				logDebug(rsp, err, "send ack'd (no retransmits)")
 				return rsp, nil
-			case <-time.After(timeout):
-				logDebug(msg, err, "send ack timeout (no retries)")
+			case <-time.After(maxWait):
+				logDebug(msg, err, "send ack timeout (no retransmits)")
 				return nil, ErrTimeout
 			}
 		} else {
+			startTime := time.Now()
 			for retryCount := 0; retryCount < options.MaxRetransmit; retryCount++ {
+				if retryCount == options.MaxRetransmit-1 {
+					timeout = maxWait - time.Now().Sub(startTime)
+				}
 				select {
 				case rsp := <-pendingChan:
-					logDebug(rsp, err, "send ack'd (%d retries)", retryCount)
+					logDebug(rsp, err, "send ack'd (%d transmits, %0.2f seconds)", retryCount+1, time.Since(startTime).Seconds())
 					return rsp, nil
 				case <-time.After(timeout):
 					//retransmit
-					logDebug(msg, err, "send ack timeout (%d/%d retries)", retryCount, options.MaxRetransmit)
+					logDebug(msg, err, "send ack timeout (%d/%d transmits, %0.2f seconds, will retry)", retryCount+1, options.MaxRetransmit, time.Since(startTime).Seconds())
 					if strings.HasPrefix(addr, "proxy:") {
 						err = proxyRecv(addr, data)
 					} else if peer != nil {
@@ -177,13 +182,14 @@ func (s *Server) send(addr string, msg *Message, options *SendOptions) (*Message
 					} else {
 						err = errors.New("coap: no valid listener")
 					}
-					logDebug(msg, err, "sent message")
+					logDebug(msg, err, "resent message")
 					if err != nil {
 						return nil, err
 					}
 				}
+				timeout *= 2
 			}
-			logDebug(msg, err, "send ack timeout (%d retries)", options.MaxRetransmit)
+			logDebug(msg, err, "send ack timeout (%d transmits, %0.2f seconds)", options.MaxRetransmit, time.Since(startTime).Seconds())
 			return nil, ErrTimeout
 		}
 	} else {
