@@ -162,8 +162,8 @@ func (s *Server) send(addr string, msg *Message, options *SendOptions) (*Message
 			}
 		} else {
 			startTime := time.Now()
-			for retryCount := 0; retryCount < options.MaxRetransmit; retryCount++ {
-				if retryCount == options.MaxRetransmit-1 {
+			for retryCount := 0; retryCount <= options.MaxRetransmit; retryCount++ {
+				if retryCount == options.MaxRetransmit {
 					timeout = maxWait - time.Now().Sub(startTime)
 				}
 				select {
@@ -172,7 +172,7 @@ func (s *Server) send(addr string, msg *Message, options *SendOptions) (*Message
 					return rsp, nil
 				case <-time.After(timeout):
 					//retransmit
-					logDebug(msg, err, "send ack timeout (%d/%d transmits, %0.2f seconds, will retry)", retryCount+1, options.MaxRetransmit, time.Since(startTime).Seconds())
+					logDebug(msg, err, "send ack retry needed (%d/%d transmits, %0.2f seconds)", retryCount+1, options.MaxRetransmit+1, time.Since(startTime).Seconds())
 					if strings.HasPrefix(addr, "proxy:") {
 						err = proxyRecv(addr, data)
 					} else if peer != nil {
@@ -189,7 +189,7 @@ func (s *Server) send(addr string, msg *Message, options *SendOptions) (*Message
 				}
 				timeout *= 2
 			}
-			logDebug(msg, err, "send ack timeout (%d transmits, %0.2f seconds)", options.MaxRetransmit, time.Since(startTime).Seconds())
+			logDebug(msg, err, "send ack timeout (%d transmits, %0.2f seconds)", options.MaxRetransmit+1, time.Since(startTime).Seconds())
 			return nil, ErrTimeout
 		}
 	} else {
