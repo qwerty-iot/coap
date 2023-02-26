@@ -26,6 +26,11 @@ func (s *Server) handleMessage(req *Message) (rsp *Message) {
 		s.dtlsListener.ClosePeer(req.Meta.RemoteAddr)
 	}
 
+	if req.Type == TypeReset {
+		logDebug(req, nil, "reset message received")
+		return
+	}
+
 	var dedup *dedupEntry
 	if req.Type == TypeConfirmable {
 		var ok bool

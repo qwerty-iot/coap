@@ -18,6 +18,7 @@ func (s *Server) pendingSave(msg *Message) chan *Message {
 	msg.MessageID = s.pendingMsgId
 	s.pendingMsgId = s.pendingMsgId + 1
 	s.pendingMap[string(msg.Token)] = pe
+	s.pendingMidMap[msg.MessageID] = pe
 	s.pendingMux.Unlock()
 	return pe.c
 }
@@ -27,15 +28,30 @@ func (s *Server) handleAcknowledgement(req *Message) bool {
 	pe, found := s.pendingMap[string(req.Token)]
 	if found {
 		delete(s.pendingMap, string(req.Token))
+		delete(s.pendingMidMap, req.MessageID)
 	}
 	s.pendingMux.Unlock()
 
-	if found {
-		if req.Code == CodeEmpty {
-			// delayed response
-			logDebug(req, nil, "ack with delayed response")
-			return true
+	if req.Code == CodeEmpty {
+		// delayed response
+		s.pendingMux.Lock()
+		pe, found = s.pendingMidMap[req.MessageID]
+		if found {
+			delete(s.pendingMidMap, req.MessageID)
 		}
+		s.pendingMux.Unlock()
+
+		select {
+		case pe.c <- req:
+			//logDebug(req, nil, "ack found (removed from pending list)")
+		default:
+			logDebug(req, nil, "ack (delayed) on closed channel (removed from pending list)")
+		}
+		logDebug(req, nil, "ack with delayed response")
+		return true
+	}
+
+	if found {
 		select {
 		case pe.c <- req:
 			//logDebug(req, nil, "ack found (removed from pending list)")

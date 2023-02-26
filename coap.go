@@ -22,9 +22,10 @@ type Server struct {
 
 	routes map[string]*routeEntry
 
-	pendingMap   map[string]*pendingEntry
-	pendingMux   sync.Mutex
-	pendingMsgId uint16
+	pendingMap    map[string]*pendingEntry
+	pendingMidMap map[uint16]*pendingEntry
+	pendingMux    sync.Mutex
+	pendingMsgId  uint16
 
 	blockCache sync.Map
 
@@ -57,6 +58,7 @@ func NewServer(conf *Config, udpAddr string, dtlsListener *dtls.Listener) (*Serv
 	h.config = NewConfig()
 	h.routes = map[string]*routeEntry{}
 	h.pendingMap = map[string]*pendingEntry{}
+	h.pendingMidMap = map[uint16]*pendingEntry{}
 	h.pendingMsgId = uint16(time.Now().UnixNano() % 32767)
 
 	if len(udpAddr) != 0 {

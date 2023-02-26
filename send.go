@@ -102,6 +102,14 @@ func (s *Server) Send(addr string, msg *Message, options *SendOptions) (*Message
 	return rsp, err
 }
 
+func (s *Server) GetNextMsgId() uint16 {
+	s.pendingMux.Lock()
+	nid := s.pendingMsgId
+	s.pendingMsgId = s.pendingMsgId + 1
+	s.pendingMux.Unlock()
+	return nid
+}
+
 func (s *Server) send(addr string, msg *Message, options *SendOptions) (*Message, error) {
 	var pendingChan chan *Message
 
@@ -116,10 +124,7 @@ func (s *Server) send(addr string, msg *Message, options *SendOptions) (*Message
 		defer nstartDec(addr)
 		pendingChan = s.pendingSave(msg)
 	} else if msg.MessageID == 0 {
-		s.pendingMux.Lock()
-		msg.MessageID = s.pendingMsgId
-		s.pendingMsgId = s.pendingMsgId + 1
-		s.pendingMux.Unlock()
+		msg.MessageID = s.GetNextMsgId()
 	}
 
 	data, err := msg.marshalBinary()
@@ -168,6 +173,16 @@ func (s *Server) send(addr string, msg *Message, options *SendOptions) (*Message
 				}
 				select {
 				case rsp := <-pendingChan:
+					if rsp.Code == CodeEmpty {
+						if msg.IsRequest() {
+							logDebug(rsp, err, "send received delayed ack'd (%0.2f seconds)", time.Since(startTime).Seconds())
+							continue
+						} else {
+							logDebug(rsp, err, "send received empty ack (%0.2f seconds)", time.Since(startTime).Seconds())
+							return rsp, nil
+						}
+
+					}
 					logDebug(rsp, err, "send ack'd (%d transmits, %0.2f seconds)", retryCount+1, time.Since(startTime).Seconds())
 					return rsp, nil
 				case <-time.After(timeout):
