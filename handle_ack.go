@@ -34,20 +34,26 @@ func (s *Server) handleAcknowledgement(req *Message) bool {
 
 	if req.Code == CodeEmpty {
 		// delayed response
-		s.pendingMux.Lock()
-		pe, found = s.pendingMidMap[req.MessageID]
-		if found {
-			delete(s.pendingMidMap, req.MessageID)
+		if pe == nil {
+			s.pendingMux.Lock()
+			pe, found = s.pendingMidMap[req.MessageID]
+			if found {
+				delete(s.pendingMidMap, req.MessageID)
+			}
+			s.pendingMux.Unlock()
+
+			if !found {
+				return false
+			}
 		}
-		s.pendingMux.Unlock()
 
 		select {
 		case pe.c <- req:
 			//logDebug(req, nil, "ack found (removed from pending list)")
 		default:
-			logDebug(req, nil, "ack (delayed) on closed channel (removed from pending list)")
+			logDebug(req, nil, "empty ack on closed channel (removed from pending list)")
 		}
-		logDebug(req, nil, "ack with delayed response")
+		//logDebug(req, nil, "empty ack")
 		return true
 	}
 

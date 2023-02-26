@@ -335,7 +335,9 @@ func (m Message) LocationPathString() string {
 
 func (m *Message) MakeReply(code COAPCode, payload []byte) *Message {
 	rm := Message{}
-	rm.Token = m.Token
+	if code != CodeEmpty {
+		rm.Token = m.Token
+	}
 	rm.MessageID = m.MessageID
 	rm.Type = TypeAcknowledgement
 	rm.Payload = payload
