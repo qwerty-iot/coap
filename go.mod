@@ -1,10 +1,10 @@
 module github.com/qwerty-iot/coap
 
-go 1.17
+go 1.20
 
 //replace github.com/qwerty-iot/dtls/v2 => ../dtls
 
 require (
-	github.com/qwerty-iot/dtls/v2 v2.6.4
-	github.com/qwerty-iot/tox v1.0.13
+	github.com/qwerty-iot/dtls/v2 v2.7.0
+	github.com/qwerty-iot/tox v1.0.15
 )
