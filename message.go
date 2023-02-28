@@ -5,8 +5,8 @@
 package coap
 
 import (
-	"crypto/x509"
 	"fmt"
+	"github.com/qwerty-iot/dtls/v2"
 	"reflect"
 	"strings"
 	"time"
@@ -15,14 +15,12 @@ import (
 )
 
 type Metadata struct {
-	ListenerName    string
-	RemoteAddr      string
-	DtlsIdentity    string
-	DtlsPublicKey   []byte
-	DtlsCertificate *x509.Certificate
-	ReceivedAt      time.Time
-	BlockSize       int
-	Server          *Server
+	ListenerName string
+	RemoteAddr   string
+	DtlsPeer     *dtls.Peer
+	ReceivedAt   time.Time
+	BlockSize    int
+	Server       *Server
 }
 
 // Message is a CoAP message.

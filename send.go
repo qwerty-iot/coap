@@ -137,9 +137,7 @@ func (s *Server) send(addr string, msg *Message, options *SendOptions) (*Message
 		msg.Meta.ListenerName = "proxy"
 		err = proxyRecv(addr, data)
 	} else if peer = s.dtlsListener.FindPeer(addr); peer != nil {
-		msg.Meta.DtlsIdentity = peer.SessionIdentityString()
-		msg.Meta.DtlsCertificate = peer.SessionCertificate()
-		msg.Meta.DtlsPublicKey = peer.SessionPublicKey()
+		msg.Meta.DtlsPeer = peer
 		msg.Meta.ListenerName = s.dtlsListener.name
 		err = peer.Write(data)
 	} else if s.udpListener != nil {
