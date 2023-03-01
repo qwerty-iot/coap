@@ -46,7 +46,7 @@ func (s *Server) handleMessage(req *Message) (rsp *Message) {
 		}
 	}
 	block1 := req.GetBlock1()
-	if block1 != nil && req.Type != TypeAcknowledgement {
+	if block1 != nil && req.IsRequest() {
 		if block1.Num == 0 && !block1.More {
 			// do nothing
 		} else if block1.Num == 0 {
@@ -138,6 +138,7 @@ func (s *Server) handleMessage(req *Message) (rsp *Message) {
 			} else {
 				if s.handleAcknowledgement(req) {
 					rsp = req.MakeReply(CodeEmpty, nil)
+					rsp.Meta.BlockSize = 0
 					rsp.Token = nil
 				}
 			}
