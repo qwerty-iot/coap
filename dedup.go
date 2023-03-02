@@ -25,12 +25,12 @@ func (s *Server) deduplicate(msg *Message) (*dedupEntry, bool) {
 	}
 	ep := epI.(*dedupEndpoint)
 
-	s.dedupDeleteAfter.Store(msg.Meta.RemoteAddr, msg.Meta.ReceivedAt.Add(s.config.DeduplicateExpiration))
-
 	entryI, found := ep.entries.Load(msg.MessageID)
 	if found {
 		return entryI.(*dedupEntry), false
 	}
+
+	s.dedupDeleteAfter.Store(msg.Meta.RemoteAddr, msg.Meta.ReceivedAt.Add(s.config.DeduplicateExpiration))
 
 	entry := &dedupEntry{pending: true}
 	ep.entries.Store(msg.MessageID, entry)
@@ -45,17 +45,15 @@ func (entry *dedupEntry) save(rsp *Message) {
 
 func (s *Server) dedupWatcher() {
 	for {
-		select {
-		case <-time.After(time.Second):
-			now := time.Now()
-			s.dedupDeleteAfter.Range(func(key, value interface{}) bool {
-				expirationTime := value.(time.Time)
-				if expirationTime.Before(now) {
-					s.dedupMap.Delete(key)
-					s.dedupDeleteAfter.Delete(key)
-				}
-				return true
-			})
-		}
+		time.Sleep(time.Second)
+		now := time.Now()
+		s.dedupDeleteAfter.Range(func(key, value interface{}) bool {
+			expirationTime := value.(time.Time)
+			if expirationTime.Before(now) {
+				s.dedupMap.Delete(key)
+				s.dedupDeleteAfter.Delete(key)
+			}
+			return true
+		})
 	}
 }

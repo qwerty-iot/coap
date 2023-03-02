@@ -21,6 +21,7 @@ func (s *Server) ProxySend(rawReq []byte, from string) ([]byte, error) {
 	req.Meta.RemoteAddr = "proxy:" + from
 	req.Meta.ListenerName = "proxy"
 	req.Meta.ReceivedAt = time.Now().UTC()
+	req.Meta.Server = s
 
 	rsp := s.handleMessage(&req)
 
