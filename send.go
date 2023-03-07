@@ -6,6 +6,7 @@ package coap
 
 import (
 	"errors"
+	"math"
 	"math/rand"
 	"strings"
 	"time"
@@ -146,21 +147,22 @@ func (s *Server) send(addr string, msg *Message, options *SendOptions) (*Message
 	} else {
 		err = errors.New("coap: no valid listener")
 	}
-	logDebug(msg, err, "sent message")
+
 	if err != nil {
 		return nil, err
 	}
 
 	if msg.Type != TypeAcknowledgement && pendingChan != nil {
-		maxWait := time.Duration(float64(options.ActTimeout*time.Duration((2^(options.MaxRetransmit+1))-1)) * options.RandomFactor)
+		maxWait := time.Duration(float64(float64(options.ActTimeout*time.Duration(math.Pow(2.0, float64(options.MaxRetransmit+1))-1)) * options.RandomFactor))
 		timeout := time.Duration(((float64(options.ActTimeout)*options.RandomFactor)-float64(options.ActTimeout))*rand.Float64()) + options.ActTimeout
+		logDebug(msg, err, "sent message (maxWait:%0.2fs timeout:%0.2fs maxRetransmit:%d)", maxWait.Seconds(), timeout.Seconds(), options.MaxRetransmit)
 		if options.MaxRetransmit == -1 {
 			select {
 			case rsp := <-pendingChan:
 				logDebug(rsp, err, "send ack'd (no retransmits)")
 				return rsp, nil
 			case <-time.After(maxWait):
-				logDebug(msg, err, "send ack timeout (no retransmits)")
+				logDebug(msg, err, "send timeout (no retransmits)")
 				return nil, ErrTimeout
 			}
 		} else {
@@ -185,27 +187,30 @@ func (s *Server) send(addr string, msg *Message, options *SendOptions) (*Message
 					return rsp, nil
 				case <-time.After(timeout):
 					//retransmit
-					logDebug(msg, err, "send ack retry needed (%d/%d transmits, %0.2f seconds)", retryCount+1, options.MaxRetransmit+1, time.Since(startTime).Seconds())
-					if strings.HasPrefix(addr, "proxy:") {
-						err = proxyRecv(addr, data)
-					} else if peer != nil {
-						err = peer.Write(data)
-					} else if s.udpListener != nil {
-						err = s.udpListener.Send(addr, data)
-					} else {
-						err = errors.New("coap: no valid listener")
-					}
-					logDebug(msg, err, "resent message")
-					if err != nil {
-						return nil, err
+					if retryCount < options.MaxRetransmit {
+						logDebug(msg, err, "send retry needed (%d/%d transmits, %0.2f seconds)", retryCount+1, options.MaxRetransmit+1, time.Since(startTime).Seconds())
+						if strings.HasPrefix(addr, "proxy:") {
+							err = proxyRecv(addr, data)
+						} else if peer != nil {
+							err = peer.Write(data)
+						} else if s.udpListener != nil {
+							err = s.udpListener.Send(addr, data)
+						} else {
+							err = errors.New("coap: no valid listener")
+						}
+						timeout *= 2
+						logDebug(msg, err, "resent message (timeout:%0.2fs)", timeout.Seconds())
+						if err != nil {
+							return nil, err
+						}
 					}
 				}
-				timeout *= 2
 			}
 			logDebug(msg, err, "send ack timeout (%d transmits, %0.2f seconds)", options.MaxRetransmit+1, time.Since(startTime).Seconds())
 			return nil, ErrTimeout
 		}
 	} else {
+		logDebug(msg, err, "sent message (no reply expected)")
 		return nil, nil
 	}
 }
