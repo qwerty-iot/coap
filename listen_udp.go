@@ -51,6 +51,7 @@ func (l *UdpListener) reader() {
 			return
 		}
 		newReq := append([]byte(nil), rawReq[:rawLen]...)
+		sniffActivity("udp", SniffRead, from.String(), l.socket.LocalAddr().String(), newReq)
 		go l.handle(newReq, from)
 	}
 }
@@ -77,6 +78,7 @@ func (l *UdpListener) handle(rawReq []byte, from *net.UDPAddr) {
 		}
 
 		if rawRsp != nil {
+			sniffActivity("udp", SniffWrite, l.socket.LocalAddr().String(), from.String(), rawRsp)
 			_, err = l.socket.WriteToUDP(rawRsp, from)
 			if err != nil {
 				logWarn(nil, err, "coap: error writing coap response")
@@ -95,6 +97,7 @@ func (l *UdpListener) Send(addr string, data []byte) error {
 	if err != nil {
 		return err
 	}
+	sniffActivity("udp", SniffWrite, l.socket.LocalAddr().String(), addr, data)
 	_, err = l.socket.WriteToUDP(data, uaddr)
 	if err != nil {
 		return err
