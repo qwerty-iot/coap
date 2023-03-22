@@ -13,9 +13,17 @@ func (s *Server) handleMessage(req *Message) (rsp *Message) {
 	now := time.Now().UTC()
 	s.lastActivity = now
 
+	var dedup *dedupEntry
+	isDup := false
+
 	logDebug(req, nil, "received message")
 	defer func() {
 		if rsp != nil {
+
+			if dedup != nil && !isDup {
+				dedup.save(rsp)
+			}
+
 			rsp.Meta = req.Meta
 			rsp.Meta.ReceivedAt = now
 			logDebug(rsp, nil, "sent reply")
@@ -31,7 +39,6 @@ func (s *Server) handleMessage(req *Message) (rsp *Message) {
 		return
 	}
 
-	var dedup *dedupEntry
 	if req.Type == TypeConfirmable {
 		var ok bool
 		dedup, ok = s.deduplicate(req)
@@ -42,6 +49,7 @@ func (s *Server) handleMessage(req *Message) (rsp *Message) {
 			}
 			logDebug(req, nil, "duplicate message, cached response returned")
 			rsp = dedup.rsp
+			isDup = true
 			return
 		}
 	}
@@ -190,8 +198,5 @@ func (s *Server) handleMessage(req *Message) (rsp *Message) {
 		}
 	}
 
-	if dedup != nil {
-		dedup.save(rsp)
-	}
 	return
 }
