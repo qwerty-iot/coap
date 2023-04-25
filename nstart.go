@@ -57,3 +57,9 @@ func nstartDec(addr string) {
 		nstartMux.Unlock()
 	}
 }
+
+func NstartClear(addr string) {
+	nstartMux.Lock()
+	delete(nstartMap, addr)
+	nstartMux.Unlock()
+}
