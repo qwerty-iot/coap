@@ -119,11 +119,11 @@ func (s *Server) send(addr string, msg *Message, options *SendOptions) (*Message
 	if msg.IsConfirmable() {
 		nstrt := time.Now().UTC()
 		nstartInc(addr, options.NStart)
-		if time.Now().UTC().Sub(nstrt).Seconds() > 0.5 || nstartCount(addr, options.NStart) > 0 {
-			logDebug(msg, nil, "nstart delay %.3fms (%d waiting)", time.Now().UTC().Sub(nstrt).Seconds(), nstartCount(addr, options.NStart))
-		}
 		defer nstartDec(addr)
 		pendingChan = s.pendingSave(msg)
+		if time.Now().UTC().Sub(nstrt).Seconds() > 1.0 || nstartCount(addr, options.NStart) > 0 {
+			logDebug(msg, nil, "nstart delay %.3fs (%d waiting)", time.Now().UTC().Sub(nstrt).Seconds(), nstartCount(addr, options.NStart))
+		}
 	} else if msg.MessageID == 0 {
 		msg.MessageID = s.GetNextMsgId()
 	}
