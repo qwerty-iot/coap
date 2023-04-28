@@ -156,7 +156,7 @@ func (s *Server) blockCacheGet(req *Message, num int, sz int) (*Message, error) 
 	if num >= 0 {
 		blockSize := 0
 		more := false
-		if offset+sz > len(bce.rsp.Payload) {
+		if offset+sz >= len(bce.rsp.Payload) {
 			blockSize = len(bce.rsp.Payload) - offset
 			bce.expires = time.Now().Add(time.Second * 10)
 		} else {

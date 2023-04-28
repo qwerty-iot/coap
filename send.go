@@ -35,7 +35,7 @@ func (s *Server) Send(addr string, msg *Message, options *SendOptions) (*Message
 			offset := blockNum * blockSize
 			dataLen := blockSize
 			more := true
-			if offset+blockSize > len(data) {
+			if offset+blockSize >= len(data) {
 				dataLen = len(data) - blockNum*blockSize
 				more = false
 			}
