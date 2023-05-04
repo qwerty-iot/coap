@@ -24,27 +24,18 @@ func (s *Server) pendingSave(msg *Message) chan *Message {
 }
 
 func (s *Server) handleAcknowledgement(req *Message) bool {
-	s.pendingMux.Lock()
-	pe, found := s.pendingMap[string(req.Token)]
-	if found {
-		delete(s.pendingMap, string(req.Token))
-		delete(s.pendingMidMap, req.MessageID)
-	}
-	s.pendingMux.Unlock()
 
 	if req.Code == CodeEmpty {
 		// delayed response
-		if pe == nil {
-			s.pendingMux.Lock()
-			pe, found = s.pendingMidMap[req.MessageID]
-			if found {
-				delete(s.pendingMidMap, req.MessageID)
-			}
-			s.pendingMux.Unlock()
+		s.pendingMux.Lock()
+		pe, found := s.pendingMidMap[req.MessageID]
+		if found {
+			delete(s.pendingMidMap, req.MessageID)
+		}
+		s.pendingMux.Unlock()
 
-			if !found {
-				return false
-			}
+		if !found {
+			return false
 		}
 
 		select {
@@ -56,6 +47,14 @@ func (s *Server) handleAcknowledgement(req *Message) bool {
 		//logDebug(req, nil, "empty ack")
 		return true
 	}
+
+	s.pendingMux.Lock()
+	pe, found := s.pendingMap[string(req.Token)]
+	if found {
+		delete(s.pendingMap, string(req.Token))
+		delete(s.pendingMidMap, req.MessageID)
+	}
+	s.pendingMux.Unlock()
 
 	if found {
 		select {
