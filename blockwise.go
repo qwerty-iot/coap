@@ -158,7 +158,7 @@ func (s *Server) blockCacheGet(req *Message, num int, sz int) (*Message, error) 
 		more := false
 		if offset+sz >= len(bce.rsp.Payload) {
 			blockSize = len(bce.rsp.Payload) - offset
-			bce.expires = time.Now().Add(time.Second * 10)
+			bce.expires = time.Now().Add(s.config.BlockInactivityTimeout)
 		} else {
 			blockSize = sz
 			more = true
@@ -173,7 +173,7 @@ func (s *Server) blockCacheGet(req *Message, num int, sz int) (*Message, error) 
 		bm := blockInit(num, more, sz)
 		newRsp.WithBlock2(bm)
 	} else {
-		bce.expires = time.Now().Add(time.Second * 10)
+		bce.expires = time.Now().Add(s.config.BlockInactivityTimeout)
 		newRsp.Payload = bce.rsp.Payload[:]
 		newRsp.Payload = append(newRsp.Payload, req.Payload...)
 	}
