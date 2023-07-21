@@ -18,6 +18,17 @@ func (s *Server) handleNotify(req *Message) *Message {
 	c := s.getObserve(req)
 
 	if c == nil {
+		if s.handleAcknowledgement(req) {
+			if req.Type == TypeConfirmable {
+				rsp = &Message{
+					Type:      TypeAcknowledgement,
+					Code:      CodeEmpty,
+					MessageID: req.MessageID,
+				}
+				return rsp
+			}
+			return nil
+		}
 		logWarn(nil, nil, "coap: observation not found")
 		rsp = &Message{
 			Type:      TypeReset,
