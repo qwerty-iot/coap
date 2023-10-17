@@ -63,3 +63,10 @@ func NstartClear(addr string) {
 	delete(nstartMap, addr)
 	nstartMux.Unlock()
 }
+
+func NstartEntryCount() int {
+	nstartMux.Lock()
+	l := len(nstartMap)
+	nstartMux.Unlock()
+	return l
+}
