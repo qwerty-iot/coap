@@ -164,3 +164,32 @@ const (
 	AppLwm2mTLV   MediaType = 11542 //application/vnd.oma.lwm2m+tlv
 	AppLwm2mJSON  MediaType = 11543 //application/vnd.oma.lwm2m+json
 )
+
+func (m MediaType) String() string {
+	switch m {
+	case None:
+		return "none"
+	case TextPlain:
+		return "text/plain;charset=utf-8"
+	case AppLinkFormat:
+		return "application/link-format"
+	case AppXML:
+		return "application/xml"
+	case AppOctets:
+		return "application/octet-stream"
+	case AppExi:
+		return "application/exi"
+	case AppJSON:
+		return "application/json"
+	case AppCBOR:
+		return "application/cbor"
+	case AppSenmlCBOR:
+		return "application/senml_cbor"
+	case AppLwm2mTLV:
+		return "application/vnd.oma.lwm2m+tlv"
+	case AppLwm2mJSON:
+		return "application/vnd.oma.lwm2m+json"
+	default:
+		return fmt.Sprintf("unknown-%d", m)
+	}
+}
