@@ -4,11 +4,11 @@ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c
 github.com/goccy/go-json v0.10.2 h1:CrxCmQqYDkv1z7lO7Wbh2HN93uovUHgrECaO5ZrCXAU=
 github.com/goccy/go-json v0.10.2/go.mod h1:6MelG93GURQebXPDq3khkgXZkazVtN9CRI+MGFi0w8I=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
-github.com/qwerty-iot/dtls/v2 v2.7.4 h1:4D1zLyT9k3xEMu7B42swcBUXsVE1Ze1rEForgVVlT/I=
-github.com/qwerty-iot/dtls/v2 v2.7.4/go.mod h1:+NEnPAJFUVRScOb7In5imz/xKuM/cUcGdtyR9tFpYA0=
-github.com/qwerty-iot/tox v1.2.0 h1:wfxu8XC5LBwamkzA4ItsYKkbRteUjR+wQi49WYIj3C8=
-github.com/qwerty-iot/tox v1.2.0/go.mod h1:JlNcWlD1D+TAZ6Av7ZFk905tMrTTABGey6aQq/lzBGU=
-github.com/stretchr/testify v1.8.2 h1:+h33VjcLVPDHtOdpUCuF+7gSuG3yGIftsP1YvFihtJ8=
+github.com/qwerty-iot/dtls/v2 v2.7.7 h1:MCDfq3fOMdl+i6m0Qrjv6UY+H3BPI1WrOvqfzOH6+jk=
+github.com/qwerty-iot/dtls/v2 v2.7.7/go.mod h1:P3h+dN8np0bVXuCqlKFQFaB3W7SfTOItN3PLA5p0DPM=
+github.com/qwerty-iot/tox v1.2.1 h1:hFIyRTJnQcJ7ciK+HkJOZJvfmAz1AKGEX7xpqCblVjU=
+github.com/qwerty-iot/tox v1.2.1/go.mod h1:JlNcWlD1D+TAZ6Av7ZFk905tMrTTABGey6aQq/lzBGU=
+github.com/stretchr/testify v1.8.4 h1:CcVxjf3Q8PM0mHUKJCdn+eZZtm5yQwehR5yeSVQQcUk=
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
 gopkg.in/yaml.v3 v3.0.1 h1:fxVm/GzAzEWqLHuvctI91KS9hhNmmWOoWu0XTYJS7CA=
 gopkg.in/yaml.v3 v3.0.1/go.mod h1:K4uyk7z7BCEPqu6E+C64Yfv1cQ7kz7rIZviUmN+EgEM=
