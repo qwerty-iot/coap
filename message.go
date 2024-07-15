@@ -46,7 +46,7 @@ func NewMessage() *Message {
 	return &Message{}
 }
 
-func (m Message) GetBlock1() *BlockMetadata {
+func (m *Message) GetBlock1() *BlockMetadata {
 	if oi := m.Option(OptBlock1); oi != nil {
 		bm, _ := blockDecode(oi)
 		return bm
@@ -54,7 +54,7 @@ func (m Message) GetBlock1() *BlockMetadata {
 	return nil
 }
 
-func (m Message) GetBlock2() *BlockMetadata {
+func (m *Message) GetBlock2() *BlockMetadata {
 	if oi := m.Option(OptBlock2); oi != nil {
 		bm, _ := blockDecode(oi)
 		return bm
@@ -62,11 +62,11 @@ func (m Message) GetBlock2() *BlockMetadata {
 	return nil
 }
 
-func (m Message) getBlockKey() string {
+func (m *Message) getBlockKey() string {
 	return m.Code.String() + m.PathString() + m.QueryString()
 }
 
-func (m Message) RequiresBlockwise() bool {
+func (m *Message) RequiresBlockwise() bool {
 	if m.Meta.BlockSize != 0 {
 		if m.Payload != nil && len(m.Payload) > m.Meta.BlockSize {
 			return true
@@ -79,15 +79,15 @@ func (m Message) RequiresBlockwise() bool {
 }
 
 // IsConfirmable returns true if this message is confirmable.
-func (m Message) IsConfirmable() bool {
+func (m *Message) IsConfirmable() bool {
 	return m.Type == TypeConfirmable
 }
 
-func (m Message) IsRequest() bool {
+func (m *Message) IsRequest() bool {
 	return m.Code < 10
 }
 
-func (m Message) PacketSize() int {
+func (m *Message) PacketSize() int {
 	if m.packetSize != 0 {
 		return m.packetSize
 	} else {
@@ -95,7 +95,7 @@ func (m Message) PacketSize() int {
 	}
 }
 
-func (m Message) OptionsMap() map[string]interface{} {
+func (m *Message) OptionsMap() map[string]interface{} {
 	ret := map[string]interface{}{}
 	for _, v := range m.opts {
 		def := optionDefs[v.ID]
@@ -117,7 +117,7 @@ func (m Message) OptionsMap() map[string]interface{} {
 }
 
 // Options gets all the values for the given option.
-func (m Message) Options(o OptionID) []interface{} {
+func (m *Message) Options(o OptionID) []interface{} {
 	var rv []interface{}
 
 	for _, v := range m.opts {
@@ -130,7 +130,7 @@ func (m Message) Options(o OptionID) []interface{} {
 }
 
 // Option gets the first value for the given option ID.
-func (m Message) Option(o OptionID) interface{} {
+func (m *Message) Option(o OptionID) interface{} {
 	for _, v := range m.opts {
 		if o == v.ID {
 			return v.Value
@@ -139,7 +139,7 @@ func (m Message) Option(o OptionID) interface{} {
 	return nil
 }
 
-func (m Message) optionStrings(o OptionID) []string {
+func (m *Message) optionStrings(o OptionID) []string {
 	var rv []string
 	for _, o := range m.Options(o) {
 		rv = append(rv, o.(string))
@@ -169,7 +169,7 @@ func (m *Message) RemoveOption(opID OptionID) {
 	m.opts = m.opts.Minus(opID)
 }
 
-func (m Message) ParseQuery() map[string]string {
+func (m *Message) ParseQuery() map[string]string {
 	if m.queryVars != nil {
 		return m.queryVars
 	}
@@ -190,7 +190,7 @@ func (m Message) ParseQuery() map[string]string {
 	return m.queryVars
 }
 
-func (m Message) QueryString() string {
+func (m *Message) QueryString() string {
 	qi := m.Options(OptURIQuery)
 	qa := tox.ToStringArray(qi)
 	return strings.Join(qa, "&")
@@ -208,12 +208,12 @@ func (m *Message) WithQuery(q map[string]string) *Message {
 }
 
 // Path gets the Path set on this message if any.
-func (m Message) Path() []string {
+func (m *Message) Path() []string {
 	return m.optionStrings(OptURIPath)
 }
 
 // PathString gets a path as a / separated string.
-func (m Message) PathString() string {
+func (m *Message) PathString() string {
 	return strings.Join(m.Path(), "/")
 }
 
@@ -322,12 +322,12 @@ func (m *Message) WithLocationPathString(path string) *Message {
 }
 
 // Path gets the Path set on this message if any.
-func (m Message) LocationPath() []string {
+func (m *Message) LocationPath() []string {
 	return m.optionStrings(OptLocationPath)
 }
 
 // PathString gets a path as a / separated string.
-func (m Message) LocationPathString() string {
+func (m *Message) LocationPathString() string {
 	return strings.Join(m.LocationPath(), "/")
 }
 
