@@ -41,6 +41,7 @@ type Config struct {
 	NStart                  int
 	Name                    string
 	Ref                     interface{}
+	ProxyOnRecv             ProxyFunction
 }
 
 func NewConfig() *Config {
@@ -96,6 +97,8 @@ func NewServer(conf *Config, udpAddr string, dtlsListener *dtls.Listener) (*Serv
 		}
 		h.config.Ref = conf.Ref
 		h.config.Name = conf.Name
+
+		h.config.ProxyOnRecv = conf.ProxyOnRecv
 	}
 
 	go h.dedupWatcher()

@@ -9,7 +9,9 @@ import (
 	"time"
 )
 
-var ProxyRecv func(rawReq []byte, to string) error
+type ProxyFunction func(rawReq []byte, to string) error
+
+var ProxyRecv ProxyFunction
 
 func (s *Server) ProxySend(rawReq []byte, from string) ([]byte, error) {
 
@@ -40,7 +42,10 @@ func (s *Server) ProxySend(rawReq []byte, from string) ([]byte, error) {
 	return nil, nil
 }
 
-func proxyRecv(addr string, data []byte) error {
+func proxyRecv(s *Server, addr string, data []byte) error {
+	if s.config.ProxyOnRecv != nil {
+		return s.config.ProxyOnRecv(data, addr[6:])
+	}
 	if ProxyRecv == nil {
 		return errors.New("coap: no proxy receive callback registered")
 	}

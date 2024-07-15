@@ -136,7 +136,7 @@ func (s *Server) send(addr string, msg *Message, options *SendOptions) (*Message
 	var peer *dtls.Peer
 	if strings.HasPrefix(addr, "proxy:") {
 		msg.Meta.ListenerName = "proxy"
-		err = proxyRecv(addr, data)
+		err = proxyRecv(s, addr, data)
 	} else if peer = s.dtlsListener.FindPeer(addr); peer != nil {
 		msg.Meta.DtlsPeer = peer
 		msg.Meta.ListenerName = s.dtlsListener.name
@@ -190,7 +190,7 @@ func (s *Server) send(addr string, msg *Message, options *SendOptions) (*Message
 					if retryCount < options.MaxRetransmit {
 						logDebug(msg, err, "send retry needed (%d/%d transmits, %0.2f seconds)", retryCount+1, options.MaxRetransmit+1, time.Since(startTime).Seconds())
 						if strings.HasPrefix(addr, "proxy:") {
-							err = proxyRecv(addr, data)
+							err = proxyRecv(s, addr, data)
 						} else if peer != nil {
 							err = peer.Write(data)
 						} else if s.udpListener != nil {
