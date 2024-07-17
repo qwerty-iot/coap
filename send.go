@@ -111,6 +111,15 @@ func (s *Server) GetNextMsgId() uint16 {
 	return nid
 }
 
+func extractProxyName(addr string) string {
+	parts := strings.SplitN(addr, ":", 2)
+	if len(parts) == 2 && strings.Contains(parts[0], ".") {
+		// The prefix is not present, the first part is an IP address
+		return ""
+	}
+	return parts[0]
+}
+
 func (s *Server) send(addr string, msg *Message, options *SendOptions) (*Message, error) {
 	var pendingChan chan *Message
 
@@ -134,9 +143,9 @@ func (s *Server) send(addr string, msg *Message, options *SendOptions) (*Message
 	}
 
 	var peer *dtls.Peer
-	if strings.HasPrefix(addr, "proxy:") {
-		msg.Meta.ListenerName = "proxy"
-		err = proxyRecv(s, addr, data)
+	if pxy := extractProxyName(addr); pxy != "" {
+		msg.Meta.ListenerName = pxy
+		err = proxyRecv(s, pxy, addr, data)
 	} else if peer = s.dtlsListener.FindPeer(addr); peer != nil {
 		msg.Meta.DtlsPeer = peer
 		msg.Meta.ListenerName = s.dtlsListener.name
@@ -189,8 +198,8 @@ func (s *Server) send(addr string, msg *Message, options *SendOptions) (*Message
 					//retransmit
 					if retryCount < options.MaxRetransmit {
 						logDebug(msg, err, "send retry needed (%d/%d transmits, %0.2f seconds)", retryCount+1, options.MaxRetransmit+1, time.Since(startTime).Seconds())
-						if strings.HasPrefix(addr, "proxy:") {
-							err = proxyRecv(s, addr, data)
+						if pxy := extractProxyName(addr); pxy != "" {
+							err = proxyRecv(s, pxy, addr, data)
 						} else if peer != nil {
 							err = peer.Write(data)
 						} else if s.udpListener != nil {

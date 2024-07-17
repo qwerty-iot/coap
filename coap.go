@@ -41,7 +41,7 @@ type Config struct {
 	NStart                  int
 	Name                    string
 	Ref                     interface{}
-	ProxyOnRecv             ProxyFunction
+	ProxyCallbacks          map[string]ProxyFunction
 }
 
 func NewConfig() *Config {
@@ -52,6 +52,13 @@ func NewConfig() *Config {
 		BlockInactivityTimeout: time.Second * 120,
 		NStart:                 1,
 	}
+}
+
+func (c *Config) AddProxyReceiver(prefix string, f ProxyFunction) {
+	if c.ProxyCallbacks == nil {
+		c.ProxyCallbacks = map[string]ProxyFunction{}
+	}
+	c.ProxyCallbacks[prefix] = f
 }
 
 func NewServer(conf *Config, udpAddr string, dtlsListener *dtls.Listener) (*Server, error) {
@@ -98,7 +105,7 @@ func NewServer(conf *Config, udpAddr string, dtlsListener *dtls.Listener) (*Serv
 		h.config.Ref = conf.Ref
 		h.config.Name = conf.Name
 
-		h.config.ProxyOnRecv = conf.ProxyOnRecv
+		h.config.ProxyCallbacks = conf.ProxyCallbacks
 	}
 
 	go h.dedupWatcher()

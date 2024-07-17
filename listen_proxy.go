@@ -11,19 +11,18 @@ import (
 
 type ProxyFunction func(rawReq []byte, to string) error
 
-var ProxyRecv ProxyFunction
-
-func (s *Server) ProxySend(rawReq []byte, from string) ([]byte, error) {
+func (s *Server) ProxySend(prefix string, rawReq []byte, from string) ([]byte, error) {
 
 	var req Message
 	if err := req.unmarshalBinary(rawReq); err != nil {
 		logError(nil, err, "coap: error parsing COAP header")
 		return nil, err
 	}
-	req.Meta.RemoteAddr = "proxy:" + from
-	req.Meta.ListenerName = "proxy"
+	req.Meta.RemoteAddr = prefix + ":" + from
+	req.Meta.ListenerName = prefix
 	req.Meta.ReceivedAt = time.Now().UTC()
 	req.Meta.Server = s
+	sniffActivity("udp", SniffRead, req.Meta.RemoteAddr, s.udpListener.socket.LocalAddr().String(), rawReq)
 
 	rsp := s.handleMessage(&req)
 
@@ -42,12 +41,11 @@ func (s *Server) ProxySend(rawReq []byte, from string) ([]byte, error) {
 	return nil, nil
 }
 
-func proxyRecv(s *Server, addr string, data []byte) error {
-	if s.config.ProxyOnRecv != nil {
-		return s.config.ProxyOnRecv(data, addr[6:])
+func proxyRecv(s *Server, prefix string, addr string, data []byte) error {
+	sniffActivity("udp", SniffWrite, s.udpListener.socket.LocalAddr().String(), addr, data)
+	cb, found := s.config.ProxyCallbacks[prefix]
+	if !found {
+		return errors.New("callback not found for prefix: " + prefix)
 	}
-	if ProxyRecv == nil {
-		return errors.New("coap: no proxy receive callback registered")
-	}
-	return ProxyRecv(data, addr[6:])
+	return cb(data, addr[len(prefix)+1:])
 }
