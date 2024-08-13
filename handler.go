@@ -97,19 +97,25 @@ func (s *Server) handleMessage(req *Message) (rsp *Message) {
 	block2 := req.GetBlock2()
 	if block2 != nil {
 		if req.IsRequest() {
-			if block2.Num == 0 {
-				// fallthrough to main handler
-			} else {
-				// we have already processed block0 so now we need to feed the rest of the blocks.
-				var err error
-				rsp, err = s.blockCacheGet(req, block2.Num, block2.Size)
-				if err != nil {
-					logError(req, err, "coap: error getting block2 response")
-					rsp = req.MakeReply(RspCodeInternalServerError, nil)
-					return
-				}
+			var err error
+			rsp, err = s.blockCacheGet(req, block2.Num, block2.Size)
+			if err == nil {
 				return
 			}
+			/*
+				if block2.Num == 0 {
+					// fallthrough to main handler
+				} else {
+					// we have already processed block0 so now we need to feed the rest of the blocks.
+					var err error
+					rsp, err = s.blockCacheGet(req, block2.Num, block2.Size)
+					if err != nil {
+						logError(req, err, "coap: error getting block2 response")
+						rsp = req.MakeReply(RspCodeInternalServerError, nil)
+						return
+					}
+					return
+				}*/
 		} else if block2.More && block2.Num == 0 {
 			// special case for notifications from observes that require blockwise
 			rsp = req.MakeReply(CodeEmpty, nil)
@@ -183,13 +189,18 @@ func (s *Server) handleMessage(req *Message) (rsp *Message) {
 			if rsp.Meta.BlockSize != 0 {
 				bs = rsp.Meta.BlockSize
 			}
-			block2 = blockInit(0, true, bs)
+			if block2 == nil {
+				block2 = blockInit(0, true, bs)
+			} else {
+				block2.More = true
+				block2.Size = bs
+			}
 
 			//store request in block cache
 			s.blockCachePut(rsp, req.getBlockKey())
 			//rewrite rsp to include block0
 			var err error
-			rsp, err = s.blockCacheGet(req, 0, bs)
+			rsp, err = s.blockCacheGet(req, block2.Num, bs)
 			if err != nil {
 				logError(req, err, "coap: error getting first block2")
 				rsp = req.MakeReply(RspCodeInternalServerError, nil)
