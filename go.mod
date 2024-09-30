@@ -6,10 +6,10 @@ go 1.20
 
 require (
 	github.com/qwerty-iot/dtls/v2 v2.7.7
-	github.com/qwerty-iot/tox v1.2.1
+	github.com/qwerty-iot/tox v1.2.16
 )
 
 require (
-	dario.cat/mergo v1.0.0 // indirect
-	github.com/goccy/go-json v0.10.2 // indirect
+	dario.cat/mergo v1.0.1 // indirect
+	github.com/goccy/go-json v0.10.3 // indirect
 )
