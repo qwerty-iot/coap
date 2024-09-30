@@ -39,7 +39,7 @@ func (s *Server) handleMessage(req *Message) (rsp *Message) {
 		return
 	}
 
-	if req.Type == TypeConfirmable {
+	if req.Type == TypeConfirmable || req.Type == TypeNonConfirmable {
 		var ok bool
 		dedup, ok = s.deduplicate(req)
 		if !ok {
