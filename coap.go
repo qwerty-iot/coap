@@ -6,6 +6,8 @@ package coap
 
 import (
 	"crypto/rand"
+	"github.com/qwerty-iot/tox"
+	"net"
 	"sync"
 	"time"
 
@@ -40,7 +42,7 @@ type Config struct {
 	BlockInactivityTimeout  time.Duration
 	NStart                  int
 	Name                    string
-	Ref                     interface{}
+	Ref                     any
 	ProxyCallbacks          map[string]ProxyFunction
 }
 
@@ -113,12 +115,30 @@ func NewServer(conf *Config, udpAddr string, dtlsListener *dtls.Listener) (*Serv
 	return h, nil
 }
 
-func (s *Server) GetRef() interface{} {
+func (s *Server) GetRef() any {
 	if s.config != nil {
 		return s.config.Ref
 	} else {
 		return nil
 	}
+}
+
+func (s *Server) GetConfig() *Config {
+	return s.config
+}
+
+func (s *Server) GetPorts() (int, int) {
+	up := -1
+	if s.udpListener != nil {
+		_, ups, _ := net.SplitHostPort(s.udpListener.socket.LocalAddr().String())
+		up = tox.ToInt(ups)
+	}
+	dp := -1
+	if s.dtlsListener != nil {
+		_, dps, _ := net.SplitHostPort(s.dtlsListener.socket.LocalAddr())
+		dp = tox.ToInt(dps)
+	}
+	return up, dp
 }
 
 func (s *Server) Close() {
