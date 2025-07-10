@@ -109,8 +109,8 @@ type option struct {
 
 func encodeInt(v uint32) []byte {
 	switch {
-	case v == 0:
-		return nil
+	//case v == 0:
+	//	return nil
 	case v < 256:
 		return []byte{byte(v)}
 	case v < 65536:
