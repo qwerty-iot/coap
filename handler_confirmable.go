@@ -8,6 +8,10 @@ func (s *Server) handleConfirmable(req *Message) *Message {
 	var rsp *Message
 
 	if req.Code == CodeEmpty {
+		callback := s.getSpecialRoute("~keepalive")
+		if callback != nil {
+			callback(req)
+		}
 		rsp = &Message{
 			Type:      TypeReset,
 			Code:      0,

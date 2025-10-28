@@ -86,3 +86,28 @@ func (s *Server) matchRoutes(msg *Message) RouteCallback {
 	}
 	return deepestCallback
 }
+
+func (s *Server) getSpecialRoute(path string) RouteCallback {
+	pathParts := []string{path}
+
+	var route *routeEntry
+	var found bool
+
+	routeMap := s.routes
+
+	var deepestCallback RouteCallback
+	for _, part := range pathParts {
+		if route, found = routeMap[part]; found {
+			deepestCallback = route.callback
+			routeMap = route.children
+		} else {
+			if route, found = routeMap["*"]; found {
+				deepestCallback = route.callback
+				routeMap = route.children
+			} else {
+				break
+			}
+		}
+	}
+	return deepestCallback
+}
