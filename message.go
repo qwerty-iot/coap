@@ -6,10 +6,11 @@ package coap
 
 import (
 	"fmt"
-	"github.com/qwerty-iot/dtls/v2"
 	"reflect"
 	"strings"
 	"time"
+
+	"github.com/qwerty-iot/dtls/v2"
 
 	"github.com/qwerty-iot/tox"
 )
@@ -63,7 +64,7 @@ func (m *Message) GetBlock2() *BlockMetadata {
 }
 
 func (m *Message) getBlockKey() string {
-	return m.Code.String() + m.PathString() + m.QueryString()
+	return m.Meta.RemoteAddr + m.Code.String() + m.PathString() + m.QueryString() + tox.ToString(m.Token)
 }
 
 func (m *Message) RequiresBlockwise() bool {
