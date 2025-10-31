@@ -121,6 +121,7 @@ func (bm *BlockMetadata) Encode() []byte {
 
 type blockCacheEntry struct {
 	rsp     *Message
+	last    int
 	expires time.Time
 }
 
@@ -128,15 +129,19 @@ func (s *Server) blockCachePut(req *Message, key string) {
 	if len(key) == 0 {
 		key = req.getBlockKey()
 	}
-	s.blockCache.Store(key, &blockCacheEntry{rsp: req, expires: time.Now().Add(s.config.BlockInactivityTimeout)})
+	s.blockCache.Store(key, &blockCacheEntry{rsp: req, last: 0, expires: time.Now().Add(s.config.BlockInactivityTimeout)})
 }
 
-func (s *Server) blockCacheAppend(req *Message) error {
+func (s *Server) blockCacheAppend(req *Message, bmeta *BlockMetadata) error {
 	bcei, ok := s.blockCache.Load(req.getBlockKey())
 	if !ok {
 		return errors.New("block not found")
 	}
 	bce := bcei.(*blockCacheEntry)
+	if bmeta.Num != bce.last+1 {
+		return errors.New("block number mismatch")
+	}
+	bce.last = bmeta.Num
 	bce.rsp.Payload = append(bce.rsp.Payload, req.Payload...)
 	return nil
 }

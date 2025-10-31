@@ -75,7 +75,7 @@ func (s *Server) handleMessage(req *Message) (rsp *Message) {
 			req.Payload = trsp.Payload
 		} else {
 			// append data
-			err := s.blockCacheAppend(req)
+			err := s.blockCacheAppend(req, block1)
 			if err != nil {
 				logError(req, err, "coap: error appending block1 cache")
 				rsp = req.MakeReply(RspCodeInternalServerError, nil)
