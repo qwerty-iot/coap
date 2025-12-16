@@ -25,6 +25,7 @@ func (s *Server) Send(addr string, msg *Message, options *SendOptions) (*Message
 	}
 
 	msg.Meta.BlockSize = options.BlockSize
+	msg.Meta.MaxMessageSize = options.MaxMessageSize
 
 	if msg.RequiresBlockwise() {
 		// chunk and send

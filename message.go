@@ -16,12 +16,13 @@ import (
 )
 
 type Metadata struct {
-	ListenerName string
-	RemoteAddr   string
-	DtlsPeer     *dtls.Peer
-	ReceivedAt   time.Time
-	BlockSize    int
-	Server       *Server
+	ListenerName   string
+	RemoteAddr     string
+	DtlsPeer       *dtls.Peer
+	ReceivedAt     time.Time
+	BlockSize      int
+	MaxMessageSize int
+	Server         *Server
 }
 
 // Message is a CoAP message.
@@ -68,15 +69,18 @@ func (m *Message) getBlockKey() string {
 }
 
 func (m *Message) RequiresBlockwise() bool {
-	if m.Meta.BlockSize != 0 {
-		if m.Payload != nil && len(m.Payload) > m.Meta.BlockSize {
-			return true
-		} else {
-			return false
-		}
-	} else {
-		return false
+	// Prefer MaxMessageSize check when provided: estimate header size and
+	// compare total (header + payload) against the configured maximum.
+	if m.Meta.MaxMessageSize > 0 {
+		return m.PacketSize() > m.Meta.MaxMessageSize
 	}
+
+	// Fallback to legacy behavior using BlockSize if MaxMessageSize is not set.
+	if m.Meta.BlockSize > 0 {
+		return len(m.Payload) > m.Meta.BlockSize
+	}
+
+	return false
 }
 
 // IsConfirmable returns true if this message is confirmable.

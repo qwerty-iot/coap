@@ -6,10 +6,11 @@ package coap
 
 import (
 	"crypto/rand"
-	"github.com/qwerty-iot/tox"
 	"net"
 	"sync"
 	"time"
+
+	"github.com/qwerty-iot/tox"
 
 	"github.com/qwerty-iot/dtls/v2"
 )
@@ -40,6 +41,7 @@ type Config struct {
 	ObserveNotFoundCallback ObserveNotFoundCallback
 	BlockDefaultSize        int
 	BlockInactivityTimeout  time.Duration
+	MaxMessageDefaultSize   int
 	NStart                  int
 	Name                    string
 	Ref                     any
@@ -53,6 +55,7 @@ func NewConfig() *Config {
 		BlockDefaultSize:       1024,
 		BlockInactivityTimeout: time.Second * 120,
 		NStart:                 1,
+		MaxMessageDefaultSize:  0,
 	}
 }
 
