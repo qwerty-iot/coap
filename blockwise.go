@@ -142,6 +142,7 @@ func (s *Server) blockCacheAppend(req *Message, bmeta *BlockMetadata) error {
 		return errors.New("block number mismatch")
 	}
 	bce.last = bmeta.Num
+	bce.expires = time.Now().Add(s.config.BlockInactivityTimeout)
 	bce.rsp.Payload = append(bce.rsp.Payload, req.Payload...)
 	return nil
 }
