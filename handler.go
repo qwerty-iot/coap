@@ -180,9 +180,9 @@ func (s *Server) handleMessage(req *Message) (rsp *Message) {
 	}
 
 	if rsp != nil {
-		if block1 != nil {
-			rsp.WithBlock1(block1)
-		}
+		//if block1 != nil {
+		//	rsp.WithBlock1(block1)
+		//}
 		if rsp.RequiresBlockwise() {
 			//need to send BLOCK2
 			bs := s.config.BlockDefaultSize

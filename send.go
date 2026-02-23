@@ -78,6 +78,10 @@ func (s *Server) Send(addr string, msg *Message, options *SendOptions) (*Message
 	if rsp != nil {
 		block2 := rsp.GetBlock2()
 		if block2 != nil && block2.More {
+
+			msg.WithBlock1(nil)
+			msg.Payload = nil
+
 			//blockwise requests
 			var data []byte
 			data = append(data, rsp.Payload...)
