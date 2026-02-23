@@ -5,8 +5,8 @@ go 1.20
 //replace github.com/qwerty-iot/dtls/v2 => ../dtls
 
 require (
-	github.com/qwerty-iot/dtls/v2 v2.9.4
-	github.com/qwerty-iot/tox v1.4.2
+	github.com/qwerty-iot/dtls/v2 v2.9.5
+	github.com/qwerty-iot/tox v1.4.3
 )
 
 require (
