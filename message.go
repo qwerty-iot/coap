@@ -65,7 +65,7 @@ func (m *Message) GetBlock2() *BlockMetadata {
 }
 
 func (m *Message) getBlockKey() string {
-	return m.Meta.RemoteAddr + m.Code.String() + m.PathString() + m.QueryString() + tox.ToString(m.Token)
+	return m.Meta.RemoteAddr + m.Code.String() + m.PathString() + m.QueryString()
 }
 
 func (m *Message) RequiresBlockwise() bool {
@@ -251,12 +251,20 @@ func (m *Message) WithPayload(payload []byte) *Message {
 }
 
 func (m *Message) WithBlock1(bm *BlockMetadata) *Message {
-	m.WithOption(OptBlock1, bm.Encode(), true)
+	if bm == nil {
+		m.RemoveOption(OptBlock1)
+	} else {
+		m.WithOption(OptBlock1, bm.Encode(), true)
+	}
 	return m
 }
 
 func (m *Message) WithBlock2(bm *BlockMetadata) *Message {
-	m.WithOption(OptBlock2, bm.Encode(), true)
+	if bm == nil {
+		m.RemoveOption(OptBlock2)
+	} else {
+		m.WithOption(OptBlock2, bm.Encode(), true)
+	}
 	return m
 }
 
