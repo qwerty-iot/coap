@@ -143,6 +143,8 @@ func (s *Server) handleMessage(req *Message) (rsp *Message) {
 
 	if block2 != nil {
 		req.Meta.BlockSize = block2.Size
+	} else if block1 != nil {
+		req.Meta.BlockSize = block1.Size
 	}
 	switch req.Type {
 	case TypeConfirmable:
@@ -180,15 +182,19 @@ func (s *Server) handleMessage(req *Message) (rsp *Message) {
 	}
 
 	if rsp != nil {
-		//if block1 != nil {
-		//	rsp.WithBlock1(block1)
-		//}
+		bs := s.config.BlockDefaultSize
+		if rsp.Meta.BlockSize != 0 {
+			bs = rsp.Meta.BlockSize
+		} else if req.Meta.BlockSize != 0 {
+			bs = req.Meta.BlockSize
+		}
+
+		if block1 != nil {
+			rsp.WithBlock1(block1)
+		}
+
 		if rsp.RequiresBlockwise() {
 			//need to send BLOCK2
-			bs := s.config.BlockDefaultSize
-			if rsp.Meta.BlockSize != 0 {
-				bs = rsp.Meta.BlockSize
-			}
 			if block2 == nil {
 				block2 = blockInit(0, true, bs)
 			} else {

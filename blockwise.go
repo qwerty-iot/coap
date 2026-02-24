@@ -178,6 +178,9 @@ func (s *Server) blockCacheGet(req *Message, num int, sz int) (*Message, error) 
 
 		bm := blockInit(num, more, sz)
 		newRsp.WithBlock2(bm)
+		if num > 0 {
+			newRsp.WithBlock1(nil)
+		}
 	} else {
 		bce.expires = time.Now().Add(s.config.BlockInactivityTimeout)
 		newRsp.Payload = bce.rsp.Payload[:]
