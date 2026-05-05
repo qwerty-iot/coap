@@ -137,6 +137,14 @@ func decodeInt(b []byte) uint32 {
 func (o option) toBytes() []byte {
 	var v uint32
 
+	if o.ID == OptObserve {
+		if i, ok := o.Value.(int); ok {
+			if i == 0 {
+				return []byte{}
+			}
+		}
+	}
+
 	switch i := o.Value.(type) {
 	case string:
 		return []byte(i)
