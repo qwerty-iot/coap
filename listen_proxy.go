@@ -12,13 +12,24 @@ import (
 type ProxyFunction func(rawReq []byte, to string) error
 
 func (s *Server) ProxySend(prefix string, rawReq []byte, from string) ([]byte, error) {
+	return s.proxySend(prefix, rawReq, prefix+":"+from, from)
+}
+
+// ProxySendWithPeer processes a proxied packet while keeping the literal
+// remote address separate from the opaque peer routing key.
+func (s *Server) ProxySendWithPeer(prefix string, rawReq []byte, from string, peerKey string) ([]byte, error) {
+	return s.proxySend(prefix, rawReq, from, peerKey)
+}
+
+func (s *Server) proxySend(prefix string, rawReq []byte, from string, peerKey string) ([]byte, error) {
 
 	var req Message
 	if err := req.unmarshalBinary(rawReq); err != nil {
 		logError(nil, err, "coap: error parsing COAP header")
 		return nil, err
 	}
-	req.Meta.RemoteAddr = prefix + ":" + from
+	req.Meta.RemoteAddr = from
+	req.Meta.PeerKey = prefix + ":" + peerKey
 	req.Meta.ListenerName = prefix
 	req.Meta.ReceivedAt = time.Now().UTC()
 	req.Meta.Server = s
@@ -41,11 +52,11 @@ func (s *Server) ProxySend(prefix string, rawReq []byte, from string) ([]byte, e
 	return nil, nil
 }
 
-func proxyRecv(s *Server, prefix string, addr string, data []byte) error {
-	sniffActivity("udp", SniffWrite, s.udpListener.socket.LocalAddr().String(), addr, data)
+func proxyRecv(s *Server, prefix string, peerKey string, remoteAddr string, data []byte) error {
+	sniffActivity("udp", SniffWrite, s.udpListener.socket.LocalAddr().String(), remoteAddr, data)
 	cb, found := s.config.ProxyCallbacks[prefix]
 	if !found {
 		return errors.New("callback not found for prefix: " + prefix)
 	}
-	return cb(data, addr[len(prefix)+1:])
+	return cb(data, peerKey[len(prefix)+1:])
 }

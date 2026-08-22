@@ -42,6 +42,7 @@ func (l *DtlsListener) reader() {
 		return
 	}
 	req.Meta.RemoteAddr = peer.RemoteAddr()
+	req.Meta.PeerKey = req.Meta.RemoteAddr
 	req.Meta.DtlsPeer = peer
 	req.Meta.ListenerName = l.name
 	req.Meta.ReceivedAt = time.Now().UTC()

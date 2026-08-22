@@ -20,6 +20,10 @@ type Observation struct {
 }
 
 func (s *Server) Observe(addr string, code COAPCode, path string, payload []byte, encoding MediaType, callback ObserveCallback, arg interface{}, options *SendOptions) (string, error) {
+	return s.ObservePeer(addr, addr, code, path, payload, encoding, callback, arg, options)
+}
+
+func (s *Server) ObservePeer(peerKey string, remoteAddr string, code COAPCode, path string, payload []byte, encoding MediaType, callback ObserveCallback, arg interface{}, options *SendOptions) (string, error) {
 	if options == nil {
 		options = s.NewOptions()
 	}
@@ -37,7 +41,7 @@ func (s *Server) Observe(addr string, code COAPCode, path string, payload []byte
 		req.Payload = payload
 	}
 
-	rsp, err := s.Send(addr, req, options)
+	rsp, err := s.SendToPeer(peerKey, remoteAddr, req, options)
 	if err != nil {
 		return "", err
 	}
@@ -55,6 +59,10 @@ func (s *Server) Observe(addr string, code COAPCode, path string, payload []byte
 }
 
 func (s *Server) ObserveCancel(addr string, path string, token string, options *SendOptions) error {
+	return s.ObserveCancelPeer(addr, addr, path, token, options)
+}
+
+func (s *Server) ObserveCancelPeer(peerKey string, remoteAddr string, path string, token string, options *SendOptions) error {
 	if options == nil {
 		options = s.NewOptions()
 	}
@@ -66,7 +74,7 @@ func (s *Server) ObserveCancel(addr string, path string, token string, options *
 
 	observeMap.Delete(token)
 
-	rsp, err := s.Send(addr, req, options)
+	rsp, err := s.SendToPeer(peerKey, remoteAddr, req, options)
 	if err != nil {
 		return err
 	}

@@ -15,10 +15,17 @@ import (
 )
 
 func (s *Server) Send(addr string, msg *Message, options *SendOptions) (*Message, error) {
+	return s.SendToPeer(addr, addr, msg, options)
+}
+
+// SendToPeer sends to an opaque peer routing key while retaining the literal
+// remote address in message metadata.
+func (s *Server) SendToPeer(peerKey string, remoteAddr string, msg *Message, options *SendOptions) (*Message, error) {
 	var rsp *Message
 	var err error
 
-	msg.Meta.RemoteAddr = addr
+	msg.Meta.RemoteAddr = remoteAddr
+	msg.Meta.PeerKey = peerKey
 
 	if options == nil {
 		options = s.NewOptions()
@@ -45,7 +52,7 @@ func (s *Server) Send(addr string, msg *Message, options *SendOptions) (*Message
 			if blockNum == 0 {
 				msg.WithSize1(len(data))
 			}
-			rsp, err = s.send(addr, msg, options)
+			rsp, err = s.sendToPeer(peerKey, remoteAddr, msg, options)
 			if err != nil {
 				return nil, err
 			}
@@ -69,7 +76,7 @@ func (s *Server) Send(addr string, msg *Message, options *SendOptions) (*Message
 			blockNum++
 		}
 	} else {
-		rsp, err = s.send(addr, msg, options)
+		rsp, err = s.sendToPeer(peerKey, remoteAddr, msg, options)
 		if err != nil {
 			return nil, err
 		}
@@ -90,7 +97,7 @@ func (s *Server) Send(addr string, msg *Message, options *SendOptions) (*Message
 			for {
 				bm := blockInit(block, false, block2.Size)
 				msg.WithBlock2(bm)
-				rsp, err = s.send(addr, msg, options)
+				rsp, err = s.sendToPeer(peerKey, remoteAddr, msg, options)
 				if err != nil {
 					return nil, err
 				}
@@ -126,17 +133,22 @@ func extractProxyName(addr string) string {
 }
 
 func (s *Server) send(addr string, msg *Message, options *SendOptions) (*Message, error) {
+	return s.sendToPeer(addr, addr, msg, options)
+}
+
+func (s *Server) sendToPeer(peerKey string, remoteAddr string, msg *Message, options *SendOptions) (*Message, error) {
 	var pendingChan chan *Message
 
-	msg.Meta.RemoteAddr = addr
+	msg.Meta.RemoteAddr = remoteAddr
+	msg.Meta.PeerKey = peerKey
 
 	if msg.IsConfirmable() {
 		nstrt := time.Now().UTC()
-		nstartInc(addr, options.NStart)
-		defer nstartDec(addr)
+		nstartInc(peerKey, options.NStart)
+		defer nstartDec(peerKey)
 		pendingChan = s.pendingSave(msg)
-		if time.Now().UTC().Sub(nstrt).Seconds() > 1.0 || nstartCount(addr, options.NStart) > 0 {
-			logDebug(msg, nil, "nstart delay %.3fs (%d waiting)", time.Now().UTC().Sub(nstrt).Seconds(), nstartCount(addr, options.NStart))
+		if time.Now().UTC().Sub(nstrt).Seconds() > 1.0 || nstartCount(peerKey, options.NStart) > 0 {
+			logDebug(msg, nil, "nstart delay %.3fs (%d waiting)", time.Now().UTC().Sub(nstrt).Seconds(), nstartCount(peerKey, options.NStart))
 		}
 	} else if msg.MessageID == 0 {
 		msg.MessageID = s.GetNextMsgId()
@@ -148,16 +160,16 @@ func (s *Server) send(addr string, msg *Message, options *SendOptions) (*Message
 	}
 
 	var peer *dtls.Peer
-	if pxy := extractProxyName(addr); pxy != "" {
+	if pxy := extractProxyName(peerKey); pxy != "" {
 		msg.Meta.ListenerName = pxy
-		err = proxyRecv(s, pxy, addr, data)
-	} else if peer = s.dtlsListener.FindPeer(addr); peer != nil {
+		err = proxyRecv(s, pxy, peerKey, remoteAddr, data)
+	} else if peer = s.dtlsListener.FindPeer(remoteAddr); peer != nil {
 		msg.Meta.DtlsPeer = peer
 		msg.Meta.ListenerName = s.dtlsListener.name
 		err = peer.Write(data)
 	} else if s.udpListener != nil {
 		msg.Meta.ListenerName = s.udpListener.name
-		err = s.udpListener.Send(addr, data)
+		err = s.udpListener.Send(remoteAddr, data)
 	} else {
 		err = errors.New("coap: no valid listener")
 	}
@@ -203,12 +215,12 @@ func (s *Server) send(addr string, msg *Message, options *SendOptions) (*Message
 					//retransmit
 					if retryCount < options.MaxRetransmit {
 						logDebug(msg, err, "send retry needed (%d/%d transmits, %0.2f seconds)", retryCount+1, options.MaxRetransmit+1, time.Since(startTime).Seconds())
-						if pxy := extractProxyName(addr); pxy != "" {
-							err = proxyRecv(s, pxy, addr, data)
+						if pxy := extractProxyName(peerKey); pxy != "" {
+							err = proxyRecv(s, pxy, peerKey, remoteAddr, data)
 						} else if peer != nil {
 							err = peer.Write(data)
 						} else if s.udpListener != nil {
-							err = s.udpListener.Send(addr, data)
+							err = s.udpListener.Send(remoteAddr, data)
 						} else {
 							err = errors.New("coap: no valid listener")
 						}
@@ -259,7 +271,7 @@ func (s *Server) blockRetreive(req *Message) (*Message, error) {
 		if af := req.Accept(); af != None {
 			msg.WithContentFormat(af)
 		}
-		rsp, err := s.send(req.Meta.RemoteAddr, msg, s.NewOptions())
+		rsp, err := s.sendToPeer(req.Meta.GetPeerKey(), req.Meta.RemoteAddr, msg, s.NewOptions())
 		if err != nil {
 			return nil, err
 		}

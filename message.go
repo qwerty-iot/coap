@@ -18,11 +18,23 @@ import (
 type Metadata struct {
 	ListenerName   string
 	RemoteAddr     string
+	PeerKey        string
 	DtlsPeer       *dtls.Peer
 	ReceivedAt     time.Time
 	BlockSize      int
 	MaxMessageSize int
 	Server         *Server
+}
+
+// GetPeerKey returns the transport routing identity for the remote peer. For
+// direct UDP and DTLS traffic it is the literal remote address. Proxies may
+// supply an opaque scoped value while leaving RemoteAddr unchanged for
+// application-visible device identity and logging.
+func (m *Metadata) GetPeerKey() string {
+	if m.PeerKey != "" {
+		return m.PeerKey
+	}
+	return m.RemoteAddr
 }
 
 // Message is a CoAP message.
@@ -65,7 +77,7 @@ func (m *Message) GetBlock2() *BlockMetadata {
 }
 
 func (m *Message) getBlockKey() string {
-	return m.Meta.RemoteAddr + m.Code.String() + m.PathString() + m.QueryString()
+	return m.Meta.GetPeerKey() + m.Code.String() + m.PathString() + m.QueryString()
 }
 
 func (m *Message) RequiresBlockwise() bool {

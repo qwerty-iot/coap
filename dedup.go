@@ -19,9 +19,10 @@ type dedupEntry struct {
 }
 
 func (s *Server) deduplicate(msg *Message) (*dedupEntry, bool) {
-	epI, ok := s.dedupMap.Load(msg.Meta.RemoteAddr)
+	peerKey := msg.Meta.GetPeerKey()
+	epI, ok := s.dedupMap.Load(peerKey)
 	if !ok {
-		epI, _ = s.dedupMap.LoadOrStore(msg.Meta.RemoteAddr, &dedupEndpoint{})
+		epI, _ = s.dedupMap.LoadOrStore(peerKey, &dedupEndpoint{})
 	}
 	ep := epI.(*dedupEndpoint)
 
@@ -30,7 +31,7 @@ func (s *Server) deduplicate(msg *Message) (*dedupEntry, bool) {
 		return entryI.(*dedupEntry), false
 	}
 
-	s.dedupDeleteAfter.Store(msg.Meta.RemoteAddr, msg.Meta.ReceivedAt.Add(s.config.DeduplicateExpiration))
+	s.dedupDeleteAfter.Store(peerKey, msg.Meta.ReceivedAt.Add(s.config.DeduplicateExpiration))
 
 	entry := &dedupEntry{pending: true}
 	ep.entries.Store(msg.MessageID, entry)

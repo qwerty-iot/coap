@@ -30,7 +30,7 @@ func (s *Server) handleMessage(req *Message) (rsp *Message) {
 		}
 	}()
 
-	if s.dtlsListener != nil && req.Meta.ListenerName != s.dtlsListener.name {
+	if s.dtlsListener != nil && req.Meta.ListenerName != s.dtlsListener.name && req.Meta.GetPeerKey() == req.Meta.RemoteAddr {
 		s.dtlsListener.ClosePeer(req.Meta.RemoteAddr)
 	}
 
@@ -120,7 +120,7 @@ func (s *Server) handleMessage(req *Message) (rsp *Message) {
 			// special case for notifications from observes that require blockwise
 			rsp = req.MakeReply(CodeEmpty, nil)
 			rsp.Token = nil
-			_, err := s.send(req.Meta.RemoteAddr, rsp, s.NewOptions())
+			_, err := s.sendToPeer(req.Meta.GetPeerKey(), req.Meta.RemoteAddr, rsp, s.NewOptions())
 			if err != nil {
 				logError(req, err, "coap: error getting failed to send empty ack to start block2 transfer")
 			}

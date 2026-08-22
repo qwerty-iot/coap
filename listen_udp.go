@@ -64,6 +64,7 @@ func (l *UdpListener) handle(rawReq []byte, from *net.UDPAddr) {
 		return
 	}
 	req.Meta.RemoteAddr = from.String()
+	req.Meta.PeerKey = req.Meta.RemoteAddr
 	req.Meta.ListenerName = l.name
 	req.Meta.ReceivedAt = time.Now().UTC()
 	req.Meta.Server = l.handler
