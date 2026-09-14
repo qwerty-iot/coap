@@ -20,8 +20,7 @@ type Server struct {
 	udpListener  *UdpListener
 	dtlsListener *DtlsListener
 
-	dedupMap         sync.Map
-	dedupDeleteAfter sync.Map
+	dedupMap sync.Map
 
 	routes map[string]*routeEntry
 
@@ -36,6 +35,8 @@ type Server struct {
 }
 
 type Config struct {
+	// DeduplicateExpiration is the lifetime of each cached message ID, measured
+	// from its first admission. Traffic from the same peer does not extend it.
 	DeduplicateExpiration   time.Duration
 	DeduplicateInterval     time.Duration
 	ObserveNotFoundCallback ObserveNotFoundCallback
