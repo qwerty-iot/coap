@@ -44,9 +44,11 @@ type Config struct {
 	BlockInactivityTimeout  time.Duration
 	MaxMessageDefaultSize   int
 	NStart                  int
-	Name                    string
-	Ref                     any
-	ProxyCallbacks          map[string]ProxyFunction
+	// NStartMaxWaiters limits queued exchanges per peer. Zero leaves the queue unlimited.
+	NStartMaxWaiters int
+	Name             string
+	Ref              any
+	ProxyCallbacks   map[string]ProxyFunction
 }
 
 func NewConfig() *Config {
@@ -107,6 +109,9 @@ func NewServer(conf *Config, udpAddr string, dtlsListener *dtls.Listener) (*Serv
 		}
 		if conf.NStart > 0 {
 			h.config.NStart = conf.NStart
+		}
+		if conf.NStartMaxWaiters > 0 {
+			h.config.NStartMaxWaiters = conf.NStartMaxWaiters
 		}
 		h.config.Ref = conf.Ref
 		h.config.Name = conf.Name

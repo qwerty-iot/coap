@@ -4,10 +4,41 @@
 
 package coap
 
-import "errors"
+import (
+	"context"
+	"errors"
+)
+
+type SendPhase string
+
+const (
+	SendPhaseNStart   SendPhase = "nstart"
+	SendPhaseExchange SendPhase = "exchange"
+)
+
+// SendError identifies where a context-aware send failed.
+type SendError struct {
+	Phase SendPhase
+	Err   error
+}
+
+func (e *SendError) Error() string { return "coap: " + string(e.Phase) + ": " + e.Err.Error() }
+func (e *SendError) Unwrap() error { return e.Err }
+func (e *SendError) Is(target error) bool {
+	return target == ErrTimeout && errors.Is(e.Err, context.DeadlineExceeded)
+}
+
+// Legacy send entrypoints retain their original error values.
+func legacySendError(err error) error {
+	if sendErr, ok := err.(*SendError); ok {
+		return sendErr.Err
+	}
+	return err
+}
 
 var (
 	ErrTimeout               = errors.New("coap: timeout")
+	ErrNStartQueueFull       = errors.New("coap: nstart queue full")
 	ErrBadRequest            = errors.New("coap: bad request")
 	ErrNotFound              = errors.New("coap: not found")
 	ErrUnauthorized          = errors.New("coap: not authorized")

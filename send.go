@@ -5,6 +5,7 @@
 package coap
 
 import (
+	"context"
 	"errors"
 	"math"
 	"math/rand"
@@ -21,6 +22,13 @@ func (s *Server) Send(addr string, msg *Message, options *SendOptions) (*Message
 // SendToPeer sends to an opaque peer routing key while retaining the literal
 // remote address in message metadata.
 func (s *Server) SendToPeer(peerKey string, remoteAddr string, msg *Message, options *SendOptions) (*Message, error) {
+	rsp, err := s.SendToPeerContext(context.Background(), peerKey, remoteAddr, msg, options)
+	return rsp, legacySendError(err)
+}
+
+// SendToPeerContext applies ctx to NSTART admission and all ACK/retry and
+// blockwise waits. Existing synchronous transport writes are not interruptible.
+func (s *Server) SendToPeerContext(ctx context.Context, peerKey string, remoteAddr string, msg *Message, options *SendOptions) (*Message, error) {
 	var rsp *Message
 	var err error
 
@@ -52,16 +60,16 @@ func (s *Server) SendToPeer(peerKey string, remoteAddr string, msg *Message, opt
 			if blockNum == 0 {
 				msg.WithSize1(len(data))
 			}
-			rsp, err = s.sendToPeer(peerKey, remoteAddr, msg, options)
+			rsp, err = s.sendToPeerContext(ctx, peerKey, remoteAddr, msg, options)
 			if err != nil {
 				return nil, err
 			}
 			if more && rsp.Code != RspCodeContinue {
-				return nil, errors.New("expected block transfer continue response")
+				return nil, &SendError{Phase: SendPhaseExchange, Err: errors.New("expected block transfer continue response")}
 			}
 			block1 := rsp.GetBlock1()
 			if block1 == nil {
-				return nil, errors.New("expected block1 in response")
+				return nil, &SendError{Phase: SendPhaseExchange, Err: errors.New("expected block1 in response")}
 			}
 			if blockSize > block1.Size {
 				// size changed, need to adjust block num
@@ -76,7 +84,7 @@ func (s *Server) SendToPeer(peerKey string, remoteAddr string, msg *Message, opt
 			blockNum++
 		}
 	} else {
-		rsp, err = s.sendToPeer(peerKey, remoteAddr, msg, options)
+		rsp, err = s.sendToPeerContext(ctx, peerKey, remoteAddr, msg, options)
 		if err != nil {
 			return nil, err
 		}
@@ -97,7 +105,7 @@ func (s *Server) SendToPeer(peerKey string, remoteAddr string, msg *Message, opt
 			for {
 				bm := blockInit(block, false, block2.Size)
 				msg.WithBlock2(bm)
-				rsp, err = s.sendToPeer(peerKey, remoteAddr, msg, options)
+				rsp, err = s.sendToPeerContext(ctx, peerKey, remoteAddr, msg, options)
 				if err != nil {
 					return nil, err
 				}
@@ -137,18 +145,43 @@ func (s *Server) send(addr string, msg *Message, options *SendOptions) (*Message
 }
 
 func (s *Server) sendToPeer(peerKey string, remoteAddr string, msg *Message, options *SendOptions) (*Message, error) {
+	rsp, err := s.sendToPeerContext(context.Background(), peerKey, remoteAddr, msg, options)
+	return rsp, legacySendError(err)
+}
+
+func (s *Server) sendToPeerContext(ctx context.Context, peerKey string, remoteAddr string, msg *Message, options *SendOptions) (rsp *Message, err error) {
 	var pendingChan chan *Message
+	phase := SendPhaseExchange
+	if msg.IsConfirmable() {
+		phase = SendPhaseNStart
+	}
+	defer func() {
+		if err != nil {
+			err = &SendError{Phase: phase, Err: err}
+		}
+	}()
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
 
 	msg.Meta.RemoteAddr = remoteAddr
 	msg.Meta.PeerKey = peerKey
 
 	if msg.IsConfirmable() {
 		nstrt := time.Now().UTC()
-		nstartInc(peerKey, options.NStart)
-		defer nstartDec(peerKey)
+		release, err := nstartAcquire(ctx, peerKey, options.NStart, s.config.NStartMaxWaiters)
+		if err != nil {
+			return nil, err
+		}
+		defer release()
+		phase = SendPhaseExchange
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
 		pendingChan = s.pendingSave(msg)
-		if time.Now().UTC().Sub(nstrt).Seconds() > 1.0 || nstartCount(peerKey, options.NStart) > 0 {
-			logDebug(msg, nil, "nstart delay %.3fs (%d waiting)", time.Now().UTC().Sub(nstrt).Seconds(), nstartCount(peerKey, options.NStart))
+		defer s.pendingRemove(string(msg.Token), msg.MessageID, pendingChan)
+		if waiting := nstartCount(peerKey); time.Now().UTC().Sub(nstrt).Seconds() > 1.0 || waiting > 0 {
+			logDebug(msg, nil, "nstart delay %.3fs (%d waiting)", time.Now().UTC().Sub(nstrt).Seconds(), waiting)
 		}
 	} else if msg.MessageID == 0 {
 		msg.MessageID = s.GetNextMsgId()
@@ -156,6 +189,9 @@ func (s *Server) sendToPeer(peerKey string, remoteAddr string, msg *Message, opt
 
 	data, err := msg.marshalBinary()
 	if err != nil {
+		return nil, err
+	}
+	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
 
@@ -177,28 +213,49 @@ func (s *Server) sendToPeer(peerKey string, remoteAddr string, msg *Message, opt
 	if err != nil {
 		return nil, err
 	}
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
 
 	if msg.Type != TypeAcknowledgement && pendingChan != nil {
 		maxWait := time.Duration(float64(float64(options.ActTimeout*time.Duration(math.Pow(2.0, float64(options.MaxRetransmit+1))-1)) * options.RandomFactor))
 		timeout := time.Duration(((float64(options.ActTimeout)*options.RandomFactor)-float64(options.ActTimeout))*rand.Float64()) + options.ActTimeout
 		logDebug(msg, err, "sent message (maxWait:%0.2fs timeout:%0.2fs maxRetransmit:%d)", maxWait.Seconds(), timeout.Seconds(), options.MaxRetransmit)
 		if options.MaxRetransmit == -1 {
+			timer := time.NewTimer(maxWait)
+			defer timer.Stop()
 			select {
+			case <-ctx.Done():
+				return nil, ctx.Err()
 			case rsp := <-pendingChan:
+				if err := ctx.Err(); err != nil {
+					return nil, err
+				}
 				logDebug(rsp, err, "send ack'd (no retransmits)")
 				return rsp, nil
-			case <-time.After(maxWait):
+			case <-timer.C:
 				logDebug(msg, err, "send timeout (no retransmits)")
 				return nil, ErrTimeout
 			}
 		} else {
 			startTime := time.Now()
 			for retryCount := 0; retryCount <= options.MaxRetransmit; retryCount++ {
+				if err := ctx.Err(); err != nil {
+					return nil, err
+				}
 				if retryCount == options.MaxRetransmit {
 					timeout = maxWait - time.Now().Sub(startTime)
 				}
+				timer := time.NewTimer(timeout)
 				select {
+				case <-ctx.Done():
+					timer.Stop()
+					return nil, ctx.Err()
 				case rsp := <-pendingChan:
+					timer.Stop()
+					if err := ctx.Err(); err != nil {
+						return nil, err
+					}
 					if rsp.Code == CodeEmpty {
 						if msg.IsRequest() {
 							logDebug(rsp, err, "send received delayed ack'd (%0.2f seconds)", time.Since(startTime).Seconds())
@@ -211,7 +268,10 @@ func (s *Server) sendToPeer(peerKey string, remoteAddr string, msg *Message, opt
 					}
 					logDebug(rsp, err, "send ack'd (%d transmits, %0.2f seconds)", retryCount+1, time.Since(startTime).Seconds())
 					return rsp, nil
-				case <-time.After(timeout):
+				case <-timer.C:
+					if err := ctx.Err(); err != nil {
+						return nil, err
+					}
 					//retransmit
 					if retryCount < options.MaxRetransmit {
 						logDebug(msg, err, "send retry needed (%d/%d transmits, %0.2f seconds)", retryCount+1, options.MaxRetransmit+1, time.Since(startTime).Seconds())

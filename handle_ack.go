@@ -23,6 +23,19 @@ func (s *Server) pendingSave(msg *Message) chan *Message {
 	return pe.c
 }
 
+// pendingRemove only removes registrations belonging to this exchange. Tokens
+// and message IDs can have been reused by another exchange in the meantime.
+func (s *Server) pendingRemove(token string, mid uint16, c chan *Message) {
+	s.pendingMux.Lock()
+	defer s.pendingMux.Unlock()
+	if pe := s.pendingMap[token]; pe != nil && pe.c == c {
+		delete(s.pendingMap, token)
+	}
+	if pe := s.pendingMidMap[mid]; pe != nil && pe.c == c {
+		delete(s.pendingMidMap, mid)
+	}
+}
+
 func (s *Server) handleAcknowledgement(req *Message) bool {
 
 	if req.Code == CodeEmpty {
@@ -52,7 +65,9 @@ func (s *Server) handleAcknowledgement(req *Message) bool {
 	pe, found := s.pendingMap[string(req.Token)]
 	if found {
 		delete(s.pendingMap, string(req.Token))
-		delete(s.pendingMidMap, req.MessageID)
+		if s.pendingMidMap[req.MessageID] == pe {
+			delete(s.pendingMidMap, req.MessageID)
+		}
 	}
 	s.pendingMux.Unlock()
 
