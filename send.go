@@ -109,9 +109,12 @@ func (s *Server) SendToPeerContext(ctx context.Context, peerKey string, remoteAd
 				if err != nil {
 					return nil, err
 				}
+				block2 = rsp.GetBlock2()
+				if block2 == nil {
+					return nil, &SendError{Phase: SendPhaseExchange, Err: errors.New("expected block2 in continuation response")}
+				}
 				data = append(data, rsp.Payload...)
 				block++
-				block2 = rsp.GetBlock2()
 				if !block2.More {
 					break
 				}
@@ -335,10 +338,13 @@ func (s *Server) blockRetreive(req *Message) (*Message, error) {
 		if err != nil {
 			return nil, err
 		}
+		block2 = rsp.GetBlock2()
+		if block2 == nil {
+			return nil, errors.New("expected block2 in continuation response")
+		}
 		data = append(data, rsp.Payload...)
 		block++
-		block2 = rsp.GetBlock2()
-		if block2 == nil || !block2.More {
+		if !block2.More {
 			break
 		}
 	}

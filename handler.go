@@ -135,6 +135,7 @@ func (s *Server) handleMessage(req *Message) (rsp *Message) {
 					MessageID: req.MessageID,
 					Token:     req.Token,
 				}
+				return
 			} else {
 				req = breq
 			}
